@@ -558,12 +558,6 @@ TAA.bm.PluginName = "TAA_BookMenu";
  *  ReadBook bookJsonTag
  *  ReadBook PluginManagerTitle (instead of "Plugin Manager Title")
  * 
- * LibraryData Reload
- *  - This will reload categories and book list without affecting the list of books
- * read by the player. This is useful if you're writing your books as you develop
- * and have a previous save you want to continue, but needs the book the list to be
- * updated.
- * 
  * LibraryData Menu Hide
  * LibraryData Menu Show
  *  - Use this commands to hide / show the book menu from the main menu list.
@@ -630,11 +624,13 @@ TAA.bm.PluginName = "TAA_BookMenu";
  * @parent ---DataSource Config---
  * @type struct<JsonConfig>
  * @desc Configure properties when using a JSON file as a datasource.
+ * @default {"Type":"Dedicated File","File":"books.json","Localization Escape Code":"#{{key}}","Category List":"library.categories","Root Context Path":"library.books","Title Object":"title","Text Object":"text","Category Object":"category","ID Object":"id","Undefined Category":"Unknown"}
  * 
  * @param Plugin Manager Books
  * @parent ---DataSource Config---
  * @type struct<BookSetup>
- * @desc Configure books throug Plugin Manager if this datasource type is selected.
+ * @desc Configure books through Plugin Manager if this datasource type is selected.
+ * @default {"Category Order":"[]","Books":"[]"}
  * 
  * @param ---Main Menu---
  * @default
@@ -680,11 +676,13 @@ TAA.bm.PluginName = "TAA_BookMenu";
  * @parent ---Detached Book Scene---
  * @type struct<DetachedTitleWindow>
  * @desc Configure properties for the Title Window for detached Book Scene.
+ * @default {"X":"Graphics.boxWidth / 12","Y":"Graphics.boxHeight / 10","Width":"Graphics.boxWidth * 4/5","Height":"this.fittingHeight(1)","Line Height":"36","Font Size":"20","Font Face":"GameFont","Text Alignment":"center","Standard Padding":"18","Text Padding":"6","Standard Opacity":"255","Back Opacity":"192","Window Skin":"Window","Hide Title Bar":"false"}
  * 
  * @param Detached Text Window Config
  * @parent ---Detached Book Scene---
  * @type struct<DetachedTextWindow>
  * @desc Configure properties for the Text Window for detached Book Scene.
+ * @default {"X":"Graphics.boxWidth/12","Y":"0","Width":"Graphics.boxWidth * 4/5","Height":"Graphics.boxHeight * 4/6","Line Height":"36","Font Size":"20","Font Face":"GameFont","Book Text Format":"%3","Standard Padding":"18","Text Padding":"6","Standard Opacity":"255","Back Opacity":"192","Window Skin":"Window"}
  * 
  * @param ---Book Menu Scene---
  * @parent ---Window Config---
@@ -694,16 +692,19 @@ TAA.bm.PluginName = "TAA_BookMenu";
  * @parent ---Book Menu Scene---
  * @type struct<MenuListWindow>
  * @desc Configure properties for the Menu List Window on the Book Menu.
+ * @default {"X":"0","Y":"0","Width":"Graphics.boxWidth * 1/3","Height":"Graphics.boxHeight","Font Size":"20","Font Face":"GameFont","Line Height":"36","Show Categories":"true","Category Alignment":"left","Closed Category Symbol":"+","Opened Category Symbol":"-","Category Text Format":"%1 %2 (%3)","Book Alignment":"left","Book Indent":"16","Hide Unread Books":"true","Standard Padding":"18","Text Padding":"6","Standard Opacity":"255","Back Opacity":"192","Window Skin":"Window"}
  * 
  * @param Menu Title Window Config
  * @parent ---Book Menu Scene---
  * @type struct<MenuTitleWindow>
  * @desc Configure properties for the Menu Title Window on the Book Menu.
+ * @default {"X":"Graphics.boxWidth / 3","Y":"0","Width":"Graphics.boxWidth * 2/3","Height":"this.fittingHeight(1)","Line Height":"36","Font Size":"20","Font Face":"GameFont","Empty Title Text":"Library","Text Alignment":"center","Standard Padding":"18","Text Padding":"6","Standard Opacity":"255","Back Opacity":"192","Window Skin":"Window"}
  * 
  * @param Menu Text Window Config
  * @parent ---Book Menu Scene---
  * @type struct<MenuTextWindow>
  * @desc Configure properties for the Menu Text Window on the Book Menu.
+ * @default {"X":"Graphics.boxWidth / 3","Y":"0","Width":"Graphics.boxWidth * 2/3","Height":"Graphics.boxHeight - this._titleWindow.height","Line Height":"36","Font Size":"20","Font Face":"GameFont","Book Text Format":"%3","Empty Book Text":"","Standard Padding":"18","Text Padding":"6","Standard Opacity":"255","Back Opacity":"192","Window Skin":"Window"}
  * 
  * 
  */
@@ -1528,10 +1529,6 @@ LibraryData.prototype.loadBooksFromParameters = function(){
     }
 };
 
-LibraryData.prototype.reloadBooks = function(){
-    this.initialize();
-};
-
 LibraryData.prototype.readBook = function(bookKey){
     this._currentBook = bookKey;
     var category = this._categoryByBookKey[bookKey];
@@ -1799,15 +1796,11 @@ Game_System.prototype.learnBooksByCategory = function(category){
         var key = keys[i];
         var strippedKey = key.replace(/[\s\t]+/g, '');
         if(cat === strippedKey){
-            $dataBooks._booksRead[key] = $dataBooks._bookKeyByCategory[key];
+            $dataBooks._booksRead[key] = $dataBooks._bookKeyByCategory[key].slice();
             found = true;
         }
         i++;
     }
-};
-
-Game_System.prototype.reloadBooks = function(){
-    $dataBooks.reloadBooks();
 };
 
 //=============================================================================
@@ -1846,10 +1839,7 @@ Game_Interpreter.prototype.pluginCommand = function(command, args){
 };
 
 Game_Interpreter.prototype.processBookPluginCommands = function(args){
-    if(args[0].toLowerCase() === 'reload'){
-        $gameSystem.reloadBooks();
-    }
-    else if(args[0].toLowerCase() === 'menu'){
+    if(args[0].toLowerCase() === 'menu'){
         if(args[1].toLowerCase() === 'hide'){
             $gameSystem.setShowBookMenu(false);
         }
