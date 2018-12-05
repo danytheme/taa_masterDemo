@@ -13,8 +13,8 @@
                 "category": 0,
                 "id": 0
             },
-            "DifferenceScenes": {
-                "title": "Difference Scenes",
+            "DifferentScenes": {
+                "title": "Different Scenes",
                 "text": "This plugin provides two different types of \nscenes.\n\nThe first one is a detached book window, that \nshows only one book at a time (title and book \ncontents). It is a simpler version meant to be \nused when the player finds a new book while \nexploring your world. You can set it up so that \nthe book will then be made available in the menu \nso that the player can read it anytime he wants, \nor not.\n\nThe second scene is kind of a \"player library\". \nIt is meant to be accessed from the main menu \nand list all books known to the player (you can \nset it up to show all books EVER, or only those \nthe player has found while exploring).",
                 "category": 0,
                 "id": 1
