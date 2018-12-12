@@ -5,12 +5,12 @@
 
 var TAA = TAA || {};
 TAA.bm = {};
-TAA.bm.Version = 1.0;
+TAA.bm.Version = "1.0.1";
 TAA.bm.PluginName = "TAA_BookMenu";
 
 /*:
  *
- * @plugindesc [1.0] Create a Book Menu
+ * @plugindesc [1.0.1] Create a Book Menu
  * @author T. A. A. (taaspider)
  * 
  * @help
@@ -603,6 +603,9 @@ TAA.bm.PluginName = "TAA_BookMenu";
  *
  * Version 1.00:
  * - First version out!
+ * Version 1.0.1:
+ * - Fixed mouse wheel scrolling by including a customization to
+ *   TouchInput._onMouseMove.
  *
  * ============================================================================
  * End of Help
@@ -2716,3 +2719,15 @@ Scene_Menu.prototype.createCommandWindow = function(){
 Scene_Menu.prototype.commandBook = function(){
     SceneManager.push(Scene_BookMenu);
 };
+
+
+//=============================================================================
+// Utils
+//=============================================================================
+
+var _alias_book_touchInput_onMouseMove = TouchInput._onMouseMove;
+TouchInput._onMouseMove = function(event){
+    _alias_book_touchInput_onMouseMove.call(this, event);
+    this._mouseOverX = Graphics.pageToCanvasX(event.pageX);
+    this._mouseOverY = Graphics.pageToCanvasY(event.pageY);
+}
