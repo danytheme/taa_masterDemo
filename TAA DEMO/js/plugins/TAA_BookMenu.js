@@ -7,6 +7,7 @@ var TAA = TAA || {};
 TAA.bm = {};
 TAA.bm.Version = "1.0.1";
 TAA.bm.PluginName = "TAA_BookMenu";
+TAA.bm.alias = {};
 
 /*:
  *
@@ -687,6 +688,36 @@ TAA.bm.PluginName = "TAA_BookMenu";
  * @desc Configure properties for the Text Window for detached Book Scene.
  * @default {"X":"Graphics.boxWidth/12","Y":"0","Width":"Graphics.boxWidth * 4/5","Height":"Graphics.boxHeight * 4/6","Line Height":"36","Font Size":"20","Font Face":"GameFont","Book Text Format":"%3","Standard Padding":"18","Text Padding":"6","Standard Opacity":"255","Back Opacity":"192","Window Skin":"Window"}
  * 
+ * @param Detached Background Options
+ * @parent ---Detached Book Scene---
+ * @type select
+ * @option None
+ * @value 0
+ * @option Default Map Print
+ * @value 1
+ * @option Full Background Image
+ * @value 2
+ * @option Multiple Images (Title + Text)
+ * @value 4
+ * @option Single Image (Title / Text)
+ * @value 8
+ * @option Full Background + Multiple Images (Title + Text)
+ * @value 6
+ * @option Full Background + Single Image (Title / Text)
+ * @value 10
+ * @option Default Map Print + Multiple Images (Title + Text)
+ * @value 5
+ * @option Default Map Print + Single Image (Title / Text)
+ * @value 9
+ * @default 1
+ * @desc Defines how the scene background should be presented.
+ * 
+ * @param Detached Background Config
+ * @parent ---Detached Book Scene---
+ * @type struct<DetachedBgConfig>
+ * @desc Configure images according to Background Image Options.
+ * @default {"Full Background Image":"","Single Image":"","Multiple Images - Title":"","Multiple Images - Text":""}
+ * 
  * @param ---Book Menu Scene---
  * @parent ---Window Config---
  * @default
@@ -709,6 +740,49 @@ TAA.bm.PluginName = "TAA_BookMenu";
  * @desc Configure properties for the Menu Text Window on the Book Menu.
  * @default {"X":"Graphics.boxWidth / 3","Y":"0","Width":"Graphics.boxWidth * 2/3","Height":"Graphics.boxHeight - this._titleWindow.height","Line Height":"36","Font Size":"20","Font Face":"GameFont","Book Text Format":"%3","Empty Book Text":"","Standard Padding":"18","Text Padding":"6","Standard Opacity":"255","Back Opacity":"192","Window Skin":"Window"}
  * 
+ * @param Menu Background Options
+ * @parent ---Book Menu Scene---
+ * @type select
+ * @option None
+ * @value 0
+ * @option Default Map Print
+ * @value 1
+ * @option Full Background Image
+ * @value 2
+ * @option Multiple Images (Title / Text + List)
+ * @value 4
+ * @option Multiple Images (Text / List + Title)
+ * @value 8
+ * @option Multiple Images (Title / List + Text)
+ * @value 16
+ * @option Multiple Images (Title + Text + List)
+ * @value 32
+ * @option Single Image (Title / Text / List)
+ * @value 64
+ * @option Full Background + Multiple Images (Title / Text + List)
+ * @value 6
+ * @option Full Background + Multiple Images (Text / List + Title)
+ * @value 10
+ * @option Full Background + Multiple Images (Title / List + Text)
+ * @value 18
+ * @option Full Background + Single Image (Title / Text / List)
+ * @value 34
+ * @option Default Map Print + Multiple Images (Title / Text + List)
+ * @value 5
+ * @option Default Map Print + Multiple Images (Text / List + Title)
+ * @value 9
+ * @option Default Map Print + Multiple Images (Title / List + Text)
+ * @value 17
+ * @option Default Map Print + Single Image (Title / Text / List)
+ * @value 65
+ * @default 1
+ * @desc Defines how the scene background should be presented.
+ * 
+ * @param Menu Background Config
+ * @parent ---Book Menu Scene---
+ * @type struct<MenuBgConfig>
+ * @desc Configure images according to Background Image Options.
+ * @default {"Full Background Image":"","Single Image":"","Multiple Images - Title":"","Multiple Images - Text":"","Multiple Images - List":""}
  * 
  */
 
@@ -1296,6 +1370,90 @@ TAA.bm.PluginName = "TAA_BookMenu";
  */
 
 //=============================================================================
+// Detached Background Image Structure
+//=============================================================================
+/*~struct~DetachedBgConfig:
+ * @param Full Background Image
+ * @type file
+ * @dir img/pictures/
+ * @default
+ * @desc Select an image for a full screen background on detached windows.
+ * 
+ * @param Single Image
+ * @type file
+ * @dir img/pictures/
+ * @default
+ * @desc Select and image to display through the whole detached window.
+ * 
+ * @param Multiple Images - Title
+ * @type file
+ * @dir img/pictures/
+ * @default
+ * @desc Select and image to display only at the detached title bar.
+ * 
+ * @param Multiple Images - Text
+ * @type file
+ * @dir img/pictures/
+ * @default
+ * @desc Select and image to display only at the detached text window.
+ * 
+ */
+
+//=============================================================================
+// Menu Background Image Structure
+//=============================================================================
+/*~struct~MenuBgConfig:
+ * @param Full Background Image
+ * @type file
+ * @dir img/pictures/
+ * @default
+ * @desc Select an image for a full screen background on menu windows.
+ * 
+ * @param Single Image
+ * @type file
+ * @dir img/pictures/
+ * @default
+ * @desc Select and image to display through the whole menu window.
+ * 
+ * @param Multiple Images - Title
+ * @type file
+ * @dir img/pictures/
+ * @default
+ * @desc Select and image to display only at the menu title bar.
+ * 
+ * @param Multiple Images - Text
+ * @type file
+ * @dir img/pictures/
+ * @default
+ * @desc Select and image to display only at the menu text window.
+ * 
+ * @param Multiple Images - List
+ * @type file
+ * @dir img/pictures/
+ * @default
+ * @desc Select and image to display only at the menu text window.
+ * 
+ * @param Single Images - Title / Text
+ * @type file
+ * @dir img/pictures/
+ * @default
+ * @desc Select and image to display only at the detached text window.
+ * 
+ * @param Single Images - Title / List
+ * @type file
+ * @dir img/pictures/
+ * @default
+ * @desc Select and image to display only at the detached text window.
+ * 
+ * @param Single Images - Text / List
+ * @type file
+ * @dir img/pictures/
+ * @default
+ * @desc Select and image to display only at the detached text window.
+ * 
+ */
+
+//=============================================================================
 // Book Structure
 //=============================================================================
  /*~struct~BookStructure:
@@ -1358,27 +1516,34 @@ TAA.bm.Parameters.Menu.ShowMenu = eval(Parameters['Show Menu']) || true;
 TAA.bm.Parameters.Menu.EnableMenu = eval(Parameters['Enable Menu']) || true;
 TAA.bm.Parameters.Menu.Name = Parameters['Menu Name'];
 
+TAA.bm.Parameters.DetachedBgImages = JSON.parse(Parameters['Detached Background Config']);
+TAA.bm.Parameters.MenuBgImages = JSON.parse(Parameters['Menu Background Config']);
+
+TAA.bm.Parameters.DetachedBgImages.Option = eval(Parameters['Detached Background Options']);
+TAA.bm.Parameters.MenuBgImages.Option = eval(Parameters['Menu Background Options']);
+
 
 //=============================================================================
 // DataManager
 //=============================================================================
 
-var _alias_book_dataManager_Initialize = DataManager.createGameObjects;
+TAA.bm.alias.DataManager = TAA.bm.alias.DataManager || {};
+TAA.bm.alias.DataManager.createGameObjects = DataManager.createGameObjects;
 DataManager.createGameObjects = function(){
-    _alias_book_dataManager_Initialize.call(this);
+    TAA.bm.alias.DataManager.createGameObjects.call(this);
     $dataBooks = new LibraryData();
 };
 
-var _alias_book_dataManager_SaveData = DataManager.makeSaveContents;
+TAA.bm.alias.DataManager.makeSaveContents = DataManager.makeSaveContents;
 DataManager.makeSaveContents = function(){
-    var contents = _alias_book_dataManager_SaveData.call(this);
+    var contents = TAA.bm.alias.DataManager.makeSaveContents.call(this);
     contents.dataBooks = $dataBooks;
     return contents;
 };
 
-var _alias_book_dataManager_LoadData = DataManager.extractSaveContents;
+TAA.bm.alias.DataManager.extractSaveContents = DataManager.extractSaveContents;
 DataManager.extractSaveContents = function(contents){
-    _alias_book_dataManager_LoadData.call(this, contents);
+    TAA.bm.alias.DataManager.extractSaveContents.call(this, contents);
     $dataBooks = contents.dataBooks;
 };
 
@@ -1646,9 +1811,10 @@ LibraryData.prototype.getAttrValue = function(book, value){
 // Game_System
 //=============================================================================
 
-var _alias_book_GameSystem_initialize = Game_System.prototype.initialize;
+TAA.bm.alias.GameSystem = TAA.bm.alias.GameSystem || {};
+TAA.bm.alias.GameSystem.initialize = Game_System.prototype.initialize;
 Game_System.prototype.initialize = function() {
-    _alias_book_GameSystem_initialize.call(this);
+    TAA.bm.alias.GameSystem.initialize.call(this);
     this.initializeBookLibrary();
 };
 
@@ -1810,9 +1976,10 @@ Game_System.prototype.learnBooksByCategory = function(category){
 // Window_MenuCommand
 //=============================================================================
 
-var _alias_book_menuCommand_addOriginalCommands = Window_MenuCommand.prototype.addOriginalCommands;
+TAA.bm.alias.Window_MenuCommand = TAA.bm.alias.Window_MenuCommand || {};
+TAA.bm.alias.Window_MenuCommand.addOriginalCommands = Window_MenuCommand.prototype.addOriginalCommands;
 Window_MenuCommand.prototype.addOriginalCommands = function(){
-    _alias_book_menuCommand_addOriginalCommands.call(this);
+    TAA.bm.alias.Window_MenuCommand.addOriginalCommands.call(this);
     if(TAA.bm.Parameters.Menu.MenuEntry && $gameSystem.isShowBookMenu()){
         if(this.findSymbol('books') <= -1){
             var command = TAA.bm.Parameters.Menu.Name;
@@ -1826,9 +1993,10 @@ Window_MenuCommand.prototype.addOriginalCommands = function(){
 // Game_Interpreter
 //=============================================================================
 
-var _alias_book_interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
+TAA.bm.alias.Game_Interpreter = TAA.bm.alias.Game_Interpreter || {};
+TAA.bm.alias.Game_Interpreter.pluginCommand = Game_Interpreter.prototype.pluginCommand;
 Game_Interpreter.prototype.pluginCommand = function(command, args){
-    _alias_book_interpreter_pluginCommand.call(this, command, args);
+    TAA.bm.alias.Game_Interpreter.pluginCommand.call(this, command, args);
     if(command.toLowerCase() === 'openbookmenu'){
         SceneManager.push(Scene_BookMenu);
     }
@@ -2153,7 +2321,7 @@ Window_BookList.prototype.processWheel = function() {
 };
   
 Window_BookList.prototype.loadWindowSkin = function() {
-    var windowskin = TAA.bm.Parameters.MenuListWindow['Window Skin'] || 'Window';
+    var windowSkin = TAA.bm.Parameters.MenuListWindow['Window Skin'] || 'Window';
     this.windowSkin = ImageManager.loadSystem(windowSkin);
 };
 
@@ -2298,9 +2466,9 @@ Window_BookTitle.prototype.standardBackOpacity = function() {
   
 Window_BookTitle.prototype.loadWindowSkin = function() {
     if(this._isBookScene)
-        var windowskin = TAA.bm.Parameters.DetachedTitleWindow['Window Skin'] || 'Window';
+        var windowSkin = TAA.bm.Parameters.DetachedTitleWindow['Window Skin'] || 'Window';
     else
-        var windowskin = TAA.bm.Parameters.MenuTitleWindow['Window Skin'] || 'Window';
+        var windowSkin = TAA.bm.Parameters.MenuTitleWindow['Window Skin'] || 'Window';
     this.windowSkin = ImageManager.loadSystem(windowSkin);
 };
 
@@ -2504,9 +2672,9 @@ Window_BookText.prototype.standardBackOpacity = function() {
   
 Window_BookText.prototype.loadWindowSkin = function() {
     if(this._isBookScene)
-        var windowskin = TAA.bm.Parameters.DetachedTextWindow['Window Skin'] || 'Window';
+        var windowSkin = TAA.bm.Parameters.DetachedTextWindow['Window Skin'] || 'Window';
     else
-        var windowskin = TAA.bm.Parameters.MenuTextWindow['Window Skin'] || 'Window';
+        var windowSkin = TAA.bm.Parameters.MenuTextWindow['Window Skin'] || 'Window';
     this.windowSkin = ImageManager.loadSystem(windowSkin);
 };
 
@@ -2587,13 +2755,21 @@ Scene_Book.prototype.initialize = function() {
 };
 
 Scene_Book.prototype.create = function() {
-    Scene_MenuBase.prototype.create.call(this);
     this.createTitleWindow();
     this.createTextWindow();
+    Scene_MenuBase.prototype.create.call(this);
+    this.addWindows();
 };
 
 Scene_Book.prototype.start = function() {
     Scene_MenuBase.prototype.start.call(this);
+};
+
+Scene_Book.prototype.addWindows = function(){
+    if($gameSystem.isTitleVisible())
+        this.addWindow(this._titleWindow);
+    this.addWindow(this._textWindow);
+    this._textWindow.activate();
 };
 
 Scene_Book.prototype.createTitleWindow = function(){
@@ -2602,9 +2778,6 @@ Scene_Book.prototype.createTitleWindow = function(){
     var width = Math.round(eval(TAA.bm.Parameters.DetachedTitleWindow.Width)) || Graphics.boxWidth;
     this._titleWindow = new Window_BookTitle(x, y, width, true);
     this._titleWindow.setBook($dataBooks._currentBook);
-    
-    if($gameSystem.isTitleVisible())
-        this.addWindow(this._titleWindow);
 };
 
 Scene_Book.prototype.createTextWindow = function(){
@@ -2615,8 +2788,6 @@ Scene_Book.prototype.createTextWindow = function(){
     this._textWindow = new Window_BookText(x, y, width, height, true);
     this._textWindow.setHandler('cancel', this.onTextCancel.bind(this));
     this._textWindow.setBook($dataBooks._currentBook, false);
-    this.addWindow(this._textWindow);
-    this._textWindow.activate();
 };
 
 Scene_Book.prototype.onTextCancel = function(){
@@ -2625,6 +2796,87 @@ Scene_Book.prototype.onTextCancel = function(){
     this._textWindow.deactivate();
     SoundManager.playCancel();
     this.popScene();
+};
+
+// Background image functions
+Scene_Book.prototype.createBackground = function(){
+    var op = TAA.bm.Parameters.DetachedBgImages.Option;
+    if(op === undefined) op = 1;
+    console.log(op);
+    if(op & 1){
+        Scene_MenuBase.prototype.createBackground.call(this);
+    }
+    if(op & 2){
+        this.createFullBackground();
+    }
+    if(op & 4){
+        this.createMultiBgImages();
+    }
+    if(op & 8){
+        this.createSingleBgImage();
+    }
+};
+
+Scene_Book.prototype.createFullBackground = function(){
+    var imgFile = TAA.bm.Parameters.DetachedBgImages["Full Background Image"];
+    if(imgFile !== undefined && imgFile !== ""){
+        this._backgroundImage = new TilingSprite();
+        this._backgroundImage.move(0, 0, Graphics.boxWidth, Graphics.boxHeight);
+        this._backgroundImage.bitmap = ImageManager.loadPicture(imgFile);
+        this.addChild(this._backgroundImage);
+    }
+};
+
+Scene_Book.prototype.createMultiBgImages = function(){
+    var ttlImgFile = TAA.bm.Parameters.DetachedBgImages["Multiple Images - Title"];
+    var txtImgFile = TAA.bm.Parameters.DetachedBgImages["Multiple Images - Text"];
+    if(ttlImgFile !== undefined && ttlImgFile !== ""){
+        this.createTitleBackground(ttlImgFile);
+    }
+    if(txtImgFile !== undefined && txtImgFile !== ""){
+        this.createTextBackground(txtImgFile);
+    }
+};
+
+Scene_Book.prototype.createSingleBgImage = function(){
+    var imgFile = TAA.bm.Parameters.DetachedBgImages["Single Image"];
+    if(imgFile !== undefined && imgFile !== ""){
+        var x = this._titleWindow.x;
+        var y = this._titleWindow.y;
+        var width = this._titleWindow.width;
+        var height = this._titleWindow.height + this._textWindow.height;
+
+        this._windowBackground = new TilingSprite();
+        this._windowBackground.move(x, y, width, height);
+        this._windowBackground.bitmap = ImageManager.loadPicture(imgFile);
+        this.addChild(this._windowBackground);
+    }
+};
+
+Scene_Book.prototype.createTitleBackground = function(imgFile){
+    var window = this._titleWindow;
+    var x = window.x;
+    var y = window.y;
+    var width = window.width;
+    var height = window.height;
+    
+    this._titleBackground = new TilingSprite();
+    this._titleBackground.move(x, y, width, height);
+    this._titleBackground.bitmap = ImageManager.loadPicture(imgFile);
+    this.addChild(this._titleBackground);
+};
+
+Scene_Book.prototype.createTextBackground = function(imgFile){
+    var window = this._textWindow;
+    var x = window.x;
+    var y = window.y;
+    var width = window.width;
+    var height = window.height;
+    
+    this._textBackground = new TilingSprite();
+    this._textBackground.move(x, y, width, height);
+    this._textBackground.bitmap = ImageManager.loadPicture(imgFile);
+    this.addChild(this._textBackground);
 };
 
 //=============================================================================
@@ -2643,15 +2895,22 @@ Scene_BookMenu.prototype.initialize = function() {
 };
 
 Scene_BookMenu.prototype.create = function() {
-    Scene_MenuBase.prototype.create.call(this);
     this.createTitleWindow();
     this.createTextWindow();
     this.createListWindow();
+    Scene_MenuBase.prototype.create.call(this);
+    this.addWindows();
 };
 
 Scene_BookMenu.prototype.start = function() {
     Scene_MenuBase.prototype.start.call(this);
+};
 
+Scene_BookMenu.prototype.addWindows = function(){
+    this.addWindow(this._titleWindow);
+    this.addWindow(this._textWindow);
+    this.addWindow(this._listWindow);
+    this._textWindow.activate();
 };
 
 Scene_BookMenu.prototype.createTitleWindow = function(){
@@ -2660,7 +2919,7 @@ Scene_BookMenu.prototype.createTitleWindow = function(){
     var width = Math.round(eval(TAA.bm.Parameters.MenuTitleWindow.Width)) || Math.round(Graphics.boxWidth * 4/6);
     this._titleWindow = new Window_BookTitle(x, y, width, false);
     //this._titleWindow.setHeight(TAA.bm.Parameters.MenuTitleWindow.Height);
-    this.addWindow(this._titleWindow);
+    //this.addWindow(this._titleWindow);
 };
 
 Scene_BookMenu.prototype.createTextWindow = function(){
@@ -2670,7 +2929,7 @@ Scene_BookMenu.prototype.createTextWindow = function(){
     var height = Math.round(eval(TAA.bm.Parameters.MenuTextWindow.Height)) || Graphics.boxHeight - this._titleWindow.height;
     this._textWindow = new Window_BookText(x, y, width, height, false);
     this._textWindow.setHandler('cancel', this.onTextCancel.bind(this));
-    this.addWindow(this._textWindow);
+    //this.addWindow(this._textWindow);
 };
 
 Scene_BookMenu.prototype.createListWindow = function(){
@@ -2679,7 +2938,7 @@ Scene_BookMenu.prototype.createListWindow = function(){
     this._listWindow.setHandler('category', this.onListCategoryToggle.bind(this));
     this._listWindow.setHandler('book', this.onListBook.bind(this));
     this._listWindow.setHandler('readBook', this.textWindowActivate.bind(this));
-    this.addWindow(this._listWindow);
+    //this.addWindow(this._listWindow);
 };
 
 Scene_BookMenu.prototype.onListCancel = function(){
@@ -2706,13 +2965,184 @@ Scene_BookMenu.prototype.onTextCancel = function(){
     this._listWindow.activate();
 };
 
+
+// Background image functions
+Scene_BookMenu.prototype.createBackground = function(){
+    var op = TAA.bm.Parameters.MenuBgImages.Option;
+    if(op === undefined) op = 1;
+    console.log(op);
+    if(op & 1){
+        Scene_MenuBase.prototype.createBackground.call(this);
+    }
+    if(op & 2){
+        this.createFullBackground();
+    }
+    if(op & 4){
+        this.createBgImagesSinglePlusList();
+    }
+    if(op & 8){
+        this.createBgImagesSinglePlusTitle();
+    }
+    if(op & 16){
+        this.createBgImagesSinglePlusText();
+    }
+    if(op & 32){
+        this.createMultiBgImages();
+    }
+    if(op & 64){
+        this.createSingleBgImage();
+    }
+};
+
+Scene_BookMenu.prototype.createFullBackground = function(){
+    var imgFile = TAA.bm.Parameters.MenuBgImages["Full Background Image"];
+    if(imgFile !== undefined && imgFile !== ""){
+        this._backgroundImage = new TilingSprite();
+        this._backgroundImage.move(0, 0, Graphics.boxWidth, Graphics.boxHeight);
+        this._backgroundImage.bitmap = ImageManager.loadPicture(imgFile);
+        this.addChild(this._backgroundImage);
+    }
+};
+
+Scene_BookMenu.prototype.createBgImagesSinglePlusList = function(){
+    var imgFile = TAA.bm.Parameters.MenuBgImages["Single Image - Title / Text"];
+    var listImg = TAA.bm.Parameters.MenuBgImages["Multiple Images - List"];
+    if(imgFile !== undefined && imgFile !== ""){
+        var x = this._titleWindow.x;
+        var y = this._titleWindow.y;
+        var width = Math.min(this._titleWindow.width, this._textWindow.width);
+        var height = this._titleWindow.height + this._textWindow.height;
+
+        this._titleTextBackground = new TilingSprite();
+        this._titleTextBackground.move(x, y, width, height);
+        this._titleTextBackground.bitmap = ImageManager.loadPicture(imgFile);
+        this.addChild(this._titleTextBackground);
+    }
+    if(listImg !== undefined && listImg !== ""){
+        this.createListBackground(listImg);
+    }
+};
+
+Scene_BookMenu.prototype.createBgImagesSinglePlusTitle = function(){
+    var imgFile = TAA.bm.Parameters.MenuBgImages["Single Image - Text / List"];
+    var titleImg = TAA.bm.Parameters.MenuBgImages["Multiple Images - Title"];
+    if(imgFile !== undefined && imgFile !== ""){
+        var x = this._listWindow.x;
+        var y = this._listWindow.y;
+        var width = this._listWindow.width + this._textWindow.width;
+        var height = Math.min(this._listWindow.height, this._textWindow.height);
+
+        this._textListBackground = new TilingSprite();
+        this._textListBackground.move(x, y, width, height);
+        this._textListBackground.bitmap = ImageManager.loadPicture(imgFile);
+        this.addChild(this._textListBackground);
+    }
+    if(titleImg !== undefined && titleImg !== ""){
+        this.createTitleBackground(titleImg);
+    }
+};
+
+Scene_BookMenu.prototype.createBgImagesSinglePlusText = function(){
+    var imgFile = TAA.bm.Parameters.MenuBgImages["Single Image - Title / List"];
+    var textImg = TAA.bm.Parameters.MenuBgImages["Multiple Images - Text"];
+    if(imgFile !== undefined && imgFile !== ""){
+        var x = this._titleWindow.x;
+        var y = this._titleWindow.y;
+        var width = Math.min(this._titleWindow.width, this._listWindow.width);
+        var height = this._titleWindow.height + this._listWindow.height;
+
+        this._titleListBackground = new TilingSprite();
+        this._titleListBackground.move(x, y, width, height);
+        this._titleListBackground.bitmap = ImageManager.loadPicture(imgFile);
+        this.addChild(this._titleListBackground);
+    }
+    if(textImg !== undefined && textImg !== ""){
+        this.createTextBackground(textImg);
+    }
+};
+
+Scene_BookMenu.prototype.createMultiBgImages = function(){
+    var ttlImgFile = TAA.bm.Parameters.DetachedBgImages["Multiple Images - Title"];
+    var txtImgFile = TAA.bm.Parameters.DetachedBgImages["Multiple Images - Text"];
+    var lstImgFile = TAA.bm.Parameters.DetachedBgImages["Multiple Images - List"];
+    if(ttlImgFile !== undefined && ttlImgFile !== ""){
+        this.createTitleBackground(ttlImgFile);
+    }
+    if(txtImgFile !== undefined && txtImgFile !== ""){
+        this.createTextBackground(txtImgFile);
+    }
+    if(lstImgFile !== undefined && lstImgFile !== ""){
+        this.createListBackground(lstImgFile);
+    }
+};
+
+Scene_BookMenu.prototype.createSingleBgImage = function(){
+    var imgFile = TAA.bm.Parameters.DetachedBgImages["Single Image"];
+    if(imgFile !== undefined && imgFile !== ""){
+        var x = Math.min(this._titleWindow.x, this._listWindow.x);
+        var y = Math.min(this._titleWindow.y, this._listWindow.y);
+        var width = this._listWindow.width + this._textWindow.width;
+        if(this._titleWindow.y < this._listWindow.y){
+            var height = this._titleWindow.height + this._textWindow.height;    
+        }
+        else{
+            var height = this._listWindow.height;
+        }
+
+        this._windowBackground = new TilingSprite();
+        this._windowBackground.move(x, y, width, height);
+        this._windowBackground.bitmap = ImageManager.loadPicture(imgFile);
+        this.addChild(this._windowBackground);
+    }
+};
+
+Scene_BookMenu.prototype.createTitleBackground = function(imgFile){
+    var window = this._titleWindow;
+    var x = window.x;
+    var y = window.y;
+    var width = window.width;
+    var height = window.height;
+    
+    this._titleBackground = new TilingSprite();
+    this._titleBackground.move(x, y, width, height);
+    this._titleBackground.bitmap = ImageManager.loadPicture(imgFile);
+    this.addChild(this._titleBackground);
+};
+
+Scene_BookMenu.prototype.createTextBackground = function(imgFile){
+    var window = this._textWindow;
+    var x = window.x;
+    var y = window.y;
+    var width = window.width;
+    var height = window.height;
+    
+    this._textBackground = new TilingSprite();
+    this._textBackground.move(x, y, width, height);
+    this._textBackground.bitmap = ImageManager.loadPicture(imgFile);
+    this.addChild(this._textBackground);
+};
+
+Scene_BookMenu.prototype.createListBackground = function(imgFile){
+    var window = this._listWindow;
+    var x = window.x;
+    var y = window.y;
+    var width = window.width;
+    var height = window.height;
+    
+    this._listBackground = new TilingSprite();
+    this._listBackground.move(x, y, width, height);
+    this._listBackground.bitmap = ImageManager.loadPicture(imgFile);
+    this.addChild(this._listBackground);
+};
+
 //=============================================================================
 // Scene_Menu
 //=============================================================================
 
-var _alias_SceneMenu_createCommandWindow = Scene_Menu.prototype.createCommandWindow;
+TAA.bm.alias.SceneMenu = TAA.bm.alias.SceneMenu || {};
+TAA.bm.alias.SceneMenu.createCommandWindow = Scene_Menu.prototype.createCommandWindow;
 Scene_Menu.prototype.createCommandWindow = function(){
-    _alias_SceneMenu_createCommandWindow.call(this);
+    TAA.bm.alias.SceneMenu.createCommandWindow.call(this);
     this._commandWindow.setHandler('books', this.commandBook.bind(this));
 };
 
@@ -2725,9 +3155,10 @@ Scene_Menu.prototype.commandBook = function(){
 // Utils
 //=============================================================================
 
-var _alias_book_touchInput_onMouseMove = TouchInput._onMouseMove;
+TAA.bm.alias.TouchInput = TAA.bm.alias.TouchInput || {};
+TAA.bm.alias.TouchInput.onMouseMove = TouchInput._onMouseMove;
 TouchInput._onMouseMove = function(event){
-    _alias_book_touchInput_onMouseMove.call(this, event);
+    TAA.bm.alias.TouchInput.onMouseMove.call(this, event);
     this._mouseOverX = Graphics.pageToCanvasX(event.pageX);
     this._mouseOverY = Graphics.pageToCanvasY(event.pageY);
-}
+};
