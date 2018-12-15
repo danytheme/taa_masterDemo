@@ -5,13 +5,13 @@
 
 var TAA = TAA || {};
 TAA.bm = {};
-TAA.bm.Version = "1.0.1";
+TAA.bm.Version = "1.1.0";
 TAA.bm.PluginName = "TAA_BookMenu";
 TAA.bm.alias = {};
 
 /*:
  *
- * @plugindesc [1.0.1] Create a Book Menu
+ * @plugindesc [1.1.0] Create a Book Menu
  * @author T. A. A. (taaspider)
  * 
  * @help
@@ -292,6 +292,43 @@ TAA.bm.alias = {};
  * Back Opacity: 192
  * Window Skin: Window
  * 
+ * 
+ * =============================================================================
+ * Background Images
+ * =============================================================================
+ * 
+ * The plugin gives a lot of options for you to setup background images on both
+ * scenes. Configurations are kept separate for each one, so you can set 
+ * different backgrounds for each scene if you wish.
+ * 
+ * All images must be in png format and located in the img/pictures folder.
+ * The parameters to config each type of background image is shared by all
+ * possible options.
+ * 
+ * A warning though, the plugin won't manipulate, stretch or shrink images.
+ * It will only place the images as they are. It's up to you to provide
+ * images on the right size.
+ * 
+ * Apart from choosing the images, you must also inform the plugin how you
+ * want it to present them. Options are a little different between scenes
+ * because the Menu Scene has an additional window (the list window), but the
+ * logic is the same. Here's a few things you should know:
+ *  - If you set it up as "None", the plugin will paint a black background,
+ * with no image;
+ *  - If you set "Default Map Print", it will keep the base class default,
+ * which is using a print screen from the map the player is located;
+ *  - If you set "Full Background Image", the image will be place as a
+ * background for the whole screen, regardless of the size of your windows;
+ *  - There's a bunch of options saying "Multiple Images", and then a combo
+ * highlighted between parenthesis, like "Title + Text", "Title / Text + List",
+ * for example. The dash sign (/) means the windows will share a single image,
+ * while the plus sign (+) means it will use a different image;
+ *  - The option "Single Image" will set the same image across all windows
+ * in the scene. If the scene takes the whole screen, it will work exactly
+ * as the "Full Background Image". If not, it will be placed as best as possible
+ * to cover all windows on the scene, and nothing more;
+ *  - There are also options to allow you to combine different configurations,
+ * so you can customize the background to your liking!
  * 
  * =============================================================================
  * Instructions - DataSources
@@ -607,6 +644,11 @@ TAA.bm.alias = {};
  * Version 1.0.1:
  * - Fixed mouse wheel scrolling by including a customization to
  *   TouchInput._onMouseMove.
+ * Version 1.1.0:
+ * - Reorganized all aliases inside an object, to make them easier to track down
+ * - Included the possibility to customize scene backgrounds with images.
+ * The Detached Scene and Menu Scene have different configurations, so that
+ * they can have different backgrounds if the dev wishes.
  *
  * ============================================================================
  * End of Help
@@ -1433,19 +1475,19 @@ TAA.bm.alias = {};
  * @default
  * @desc Select and image to display only at the menu text window.
  * 
- * @param Single Images - Title / Text
+ * @param Single Image - Title / Text
  * @type file
  * @dir img/pictures/
  * @default
  * @desc Select and image to display only at the detached text window.
  * 
- * @param Single Images - Title / List
+ * @param Single Image - Title / List
  * @type file
  * @dir img/pictures/
  * @default
  * @desc Select and image to display only at the detached text window.
  * 
- * @param Single Images - Text / List
+ * @param Single Image - Text / List
  * @type file
  * @dir img/pictures/
  * @default
@@ -2802,7 +2844,6 @@ Scene_Book.prototype.onTextCancel = function(){
 Scene_Book.prototype.createBackground = function(){
     var op = TAA.bm.Parameters.DetachedBgImages.Option;
     if(op === undefined) op = 1;
-    console.log(op);
     if(op & 1){
         Scene_MenuBase.prototype.createBackground.call(this);
     }
@@ -2910,7 +2951,6 @@ Scene_BookMenu.prototype.addWindows = function(){
     this.addWindow(this._titleWindow);
     this.addWindow(this._textWindow);
     this.addWindow(this._listWindow);
-    this._textWindow.activate();
 };
 
 Scene_BookMenu.prototype.createTitleWindow = function(){
@@ -2918,8 +2958,6 @@ Scene_BookMenu.prototype.createTitleWindow = function(){
     var y = Math.round(eval(TAA.bm.Parameters.MenuTitleWindow.Y)) || 0;
     var width = Math.round(eval(TAA.bm.Parameters.MenuTitleWindow.Width)) || Math.round(Graphics.boxWidth * 4/6);
     this._titleWindow = new Window_BookTitle(x, y, width, false);
-    //this._titleWindow.setHeight(TAA.bm.Parameters.MenuTitleWindow.Height);
-    //this.addWindow(this._titleWindow);
 };
 
 Scene_BookMenu.prototype.createTextWindow = function(){
@@ -2929,7 +2967,6 @@ Scene_BookMenu.prototype.createTextWindow = function(){
     var height = Math.round(eval(TAA.bm.Parameters.MenuTextWindow.Height)) || Graphics.boxHeight - this._titleWindow.height;
     this._textWindow = new Window_BookText(x, y, width, height, false);
     this._textWindow.setHandler('cancel', this.onTextCancel.bind(this));
-    //this.addWindow(this._textWindow);
 };
 
 Scene_BookMenu.prototype.createListWindow = function(){
@@ -2938,7 +2975,6 @@ Scene_BookMenu.prototype.createListWindow = function(){
     this._listWindow.setHandler('category', this.onListCategoryToggle.bind(this));
     this._listWindow.setHandler('book', this.onListBook.bind(this));
     this._listWindow.setHandler('readBook', this.textWindowActivate.bind(this));
-    //this.addWindow(this._listWindow);
 };
 
 Scene_BookMenu.prototype.onListCancel = function(){
@@ -2970,7 +3006,6 @@ Scene_BookMenu.prototype.onTextCancel = function(){
 Scene_BookMenu.prototype.createBackground = function(){
     var op = TAA.bm.Parameters.MenuBgImages.Option;
     if(op === undefined) op = 1;
-    console.log(op);
     if(op & 1){
         Scene_MenuBase.prototype.createBackground.call(this);
     }
@@ -3030,7 +3065,7 @@ Scene_BookMenu.prototype.createBgImagesSinglePlusTitle = function(){
         var x = this._listWindow.x;
         var y = this._listWindow.y;
         var width = this._listWindow.width + this._textWindow.width;
-        var height = Math.min(this._listWindow.height, this._textWindow.height);
+        var height = Math.max(this._listWindow.height, this._textWindow.height);
 
         this._textListBackground = new TilingSprite();
         this._textListBackground.move(x, y, width, height);
@@ -3046,10 +3081,13 @@ Scene_BookMenu.prototype.createBgImagesSinglePlusText = function(){
     var imgFile = TAA.bm.Parameters.MenuBgImages["Single Image - Title / List"];
     var textImg = TAA.bm.Parameters.MenuBgImages["Multiple Images - Text"];
     if(imgFile !== undefined && imgFile !== ""){
-        var x = this._titleWindow.x;
-        var y = this._titleWindow.y;
-        var width = Math.min(this._titleWindow.width, this._listWindow.width);
-        var height = this._titleWindow.height + this._listWindow.height;
+        var x = Math.min(this._titleWindow.x, this._listWindow.x);
+        var y = Math.min(this._titleWindow.y, this._listWindow.y);
+        if(this._titleWindow.width === this._listWindow.width)
+            var width = this._titleWindow.width;
+        else
+            var width = Math.min(this._titleWindow.width + this._listWindow.width, Graphics.boxWidth);
+        var height = Math.min(this._titleWindow.height + this._listWindow.height, Graphics.boxHeight);
 
         this._titleListBackground = new TilingSprite();
         this._titleListBackground.move(x, y, width, height);
@@ -3062,9 +3100,9 @@ Scene_BookMenu.prototype.createBgImagesSinglePlusText = function(){
 };
 
 Scene_BookMenu.prototype.createMultiBgImages = function(){
-    var ttlImgFile = TAA.bm.Parameters.DetachedBgImages["Multiple Images - Title"];
-    var txtImgFile = TAA.bm.Parameters.DetachedBgImages["Multiple Images - Text"];
-    var lstImgFile = TAA.bm.Parameters.DetachedBgImages["Multiple Images - List"];
+    var ttlImgFile = TAA.bm.Parameters.MenuBgImages["Multiple Images - Title"];
+    var txtImgFile = TAA.bm.Parameters.MenuBgImages["Multiple Images - Text"];
+    var lstImgFile = TAA.bm.Parameters.MenuBgImages["Multiple Images - List"];
     if(ttlImgFile !== undefined && ttlImgFile !== ""){
         this.createTitleBackground(ttlImgFile);
     }
@@ -3077,7 +3115,7 @@ Scene_BookMenu.prototype.createMultiBgImages = function(){
 };
 
 Scene_BookMenu.prototype.createSingleBgImage = function(){
-    var imgFile = TAA.bm.Parameters.DetachedBgImages["Single Image"];
+    var imgFile = TAA.bm.Parameters.MenuBgImages["Single Image"];
     if(imgFile !== undefined && imgFile !== ""){
         var x = Math.min(this._titleWindow.x, this._listWindow.x);
         var y = Math.min(this._titleWindow.y, this._listWindow.y);
