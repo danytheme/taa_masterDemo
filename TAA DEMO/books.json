@@ -19,6 +19,12 @@
                 "category": 0,
                 "id": 1
             },
+            "BackgroundImages": {
+                "title": "Background Images",
+                "text": "The plugin gives a lot of options for you to \nsetup background images on both scenes. \nConfigurations are kept separate for each one, \nso you can set different backgrounds for each \nscene if you wish.\n\nAll images must be in png format and located \nin the img/pictures folder. The parameters to \nconfig each type of background image is shared \nby all possible options.\n\nA warning though, the plugin won't manipulate, \nstretch or shrink images. It will only place \nthe images as they are. It's up to you to \nprovide images on the right size.\n\nApart from choosing the images, you must also \ninform the plugin how you want it to present \nthem. Options are a little different between \nscenes because the Menu Scene has an additional \nwindow (the list window), but the logic is the \nsame. Here's a few things you should know:\n - If you set it up as \"None\", the plugin will \n paint a black background, with no image;\n - If you set \"Default Map Print\", it will keep \n the base class default, which is using a print \n screen from the map the player is located;\n - If you set \"Full Background Image\", the image \n will be place as a background for the whole \n screen, regardless of the size of your windows;\n - There's a bunch of options saying \"Multiple \n Images\", and then a combo highlighted between \n parenthesis, like \"Title + Text\", \"Title / Text \n + List\", for example. The dash sign (/) means \n the windows will share a single image, while \n the plus sign (+) means it will use a different \n image;\n - The option \"Single Image\" will set the same \n image across all windows in the scene. If the \n scene takes the whole screen, it will work \n exactly as the \"Full Background Image\". If not, \n it will be placed as best as possible to cover \n all windows on the scene, and nothing more;\n - There are also options to allow you to combine \n different configurations, so you can customize \n the background to your liking!",
+                "category": 0,
+                "id": 2
+            },
             "DetachedTitle": {
                 "title": "Detached Title",
                 "text": "This parameter configures the title bar from the\ndetached window scene. All options are meant to\ncontrol a specific aspect of the window.\n\n Hide Title Bar\n  - Use this to hide the Title Window and show\n  only the Text window.\n Default: false",
@@ -48,7 +54,7 @@
                 "title": "DataSources",
                 "text": "This plugin was built to work with two main types \nof datasources: the Plugin Manager and external\nJSON files.\n\nDataSource Type\n - Use this parameters to define which datasource\n will be used. If you choose 'Plugin Manager',\n you need to enter your books in the 'Plugin\n Manager Books' parameter. If you choose the\n 'JSON File' option, you need to refine \n configurations in the 'JSON Config' parameter.\n Either way, you should use only one. So by\n choosing one you can safely ignore the other\n parameters.",
                 "category": 0,
-                "id": 2
+                "id": 3
             },
             "JSONConfig-I": {
                 "title": "JSON Config - I",
