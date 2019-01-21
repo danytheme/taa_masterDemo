@@ -3404,7 +3404,6 @@ Scene_BookMenu.prototype.createListAndTextBackground = function(imgFile){
     this.addChild(this._textListBackground);
 };
 
-var _alias_t = Scene_Base.prototype.updateChildren;
 Scene_BookMenu.prototype.updateChildren = function(){
     var customBg = $dataBooks.customBgByKey(this._textWindow._bookKey);
     var index = this.children.length-1;
