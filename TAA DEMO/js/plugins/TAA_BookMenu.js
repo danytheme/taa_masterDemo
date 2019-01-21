@@ -5,13 +5,13 @@
 
 var TAA = TAA || {};
 TAA.bm = {};
-TAA.bm.Version = "1.1.0";
+TAA.bm.Version = "1.2.0";
 TAA.bm.PluginName = "TAA_BookMenu";
 TAA.bm.alias = {};
 
 /*:
  *
- * @plugindesc [1.1.0] Create a Book Menu
+ * @plugindesc [1.2.0] Create a Book Menu
  * @author T. A. A. (taaspider)
  * 
  * @help
@@ -331,6 +331,44 @@ TAA.bm.alias = {};
  * so you can customize the background to your liking!
  * 
  * =============================================================================
+ * Custom Backgrounds
+ * =============================================================================
+ * 
+ * IMPORTANT: All images will be loaded from the img/pictures folder, and 
+ * they must be in png format.
+ * 
+ * You can setup custom backgrounds for individual books, so that it will override
+ * the global background configurations. You may set it to show on the detached
+ * window or menu window separately, or on both, and you can define if it will
+ * cover the text window only or both text and title windows. You can't setup 
+ * different backgrounds for each scene though, for ease of use.
+ * 
+ * While using the Plugin Manager to load books, just set the "Custom Background"
+ * parameter of a books to select an image, and the "Custom Background Mode" to
+ * set the custom background behavior. Leave "Custom Background" empty if you
+ * don't want a custom image to be displayed.
+ * 
+ * If using a JSON file as datasource, just add a "customBg" tag to specify the
+ * file name and a customBgMode to define the custom background behavior. The
+ * customBgMode tag must be an integer, as follows:
+ *  - 5: Detached Text Window Only
+ *  - 6: Menu Text Window Only
+ *  - 7: All Text Window Only
+ *  - 9: Detached Title + Text Window
+ *  - 10: Menu Title + Text Window
+ *  - 11: All Title + Text Window
+ * Just to clarify, this code is read bitwise by the plugin. That's why it is not 
+ * sequential. Bits are read as follows:
+ *  - 1 (least significant bit): Affects the detached window
+ *  - 2 (second least significant bit): Affects the menu window
+ *  - 4 (second most significant bit): Affects the text window
+ *  - 8 (most significant bit): Affects both text and title window
+ * 
+ * Do not include the custom background tags in your JSON file if you don't want
+ * to use a custom image for the book, or leave "customBg" as an empty string.
+ *  
+ * 
+ * =============================================================================
  * Instructions - DataSources
  * =============================================================================
  * 
@@ -381,7 +419,9 @@ TAA.bm.alias = {};
  *              "title": "Book Title",
  *              "text": "Book's content.",
  *              "category": 0,
- *              "id": 0
+ *              "id": 0,
+ *              "customBg": "Picture Name",
+ *              "customBgMode": 11
  *          },
  *          "title2": {
  *              ...
@@ -1518,6 +1558,31 @@ TAA.bm.alias = {};
  * @type number
  * @default 0
  * @desc This can be used to alter the order of books in the menu list. Leave default to use entry order.
+ * 
+ * @param customBg
+ * @text Custom Background
+ * @type file
+ * @dir img/pictures/
+ * @default
+ * @desc Custom background image.
+ * 
+ * @param customBgMode
+ * @text Custom Background Mode
+ * @type select
+ * @option Detached Text Window Only
+ * @value 5
+ * @option Detached Title + Text Window
+ * @value 9
+ * @option Menu Text Window Only
+ * @value 6
+ * @option Menu Title + Text Window
+ * @value 10
+ * @option All Text Window Only
+ * @value 7
+ * @option All Title + Text Window
+ * @value 11
+ * @default 11
+ * @desc Define how the custom image should be used.
  */
 
 //=============================================================================
@@ -1751,6 +1816,10 @@ LibraryData.prototype.readBook = function(bookKey){
     }
 };
 
+LibraryData.prototype.resetCurrentBook = function(){
+    this._currentBook = undefined;
+};
+
 LibraryData.prototype.isBookReady = function(){
     if(this._currentBook === undefined) return false;
     else return true;
@@ -1847,6 +1916,28 @@ LibraryData.prototype.getAttrValue = function(book, value){
         result = this._books[book][value];
     }
     return result;
+};
+
+LibraryData.prototype.customBg = function(){
+    if(this._currentBook === undefined || this._books[this._currentBook] === undefined) return undefined;
+
+    var customBg = {};
+    customBg.file = this._books[this._currentBook]["customBg"] || undefined;
+    customBg.mode = parseInt(this._books[this._currentBook]["customBgMode"]) || 15;
+
+    if(customBg.file === undefined) return undefined;
+    return customBg;
+};
+
+LibraryData.prototype.customBgByKey = function(bookKey){
+    if(bookKey === undefined || this._books[bookKey] === undefined) return undefined;
+
+    var customBg = {};
+    customBg.file = this._books[bookKey]["customBg"] || undefined;
+    customBg.mode = parseInt(this._books[bookKey]["customBgMode"]) || 15;
+
+    if(customBg.file === undefined) return undefined;
+    return customBg;
 };
 
 //=============================================================================
@@ -2837,12 +2928,17 @@ Scene_Book.prototype.onTextCancel = function(){
     this._textWindow._bookKey = undefined;
     this._textWindow.deactivate();
     SoundManager.playCancel();
+    $dataBooks.resetCurrentBook();
     this.popScene();
 };
 
 // Background image functions
 Scene_Book.prototype.createBackground = function(){
     var op = TAA.bm.Parameters.DetachedBgImages.Option;
+
+    var customBg = $dataBooks.customBg();
+    if((customBg.mode & 1) !== 1) customBg = undefined;
+
     if(op === undefined) op = 1;
     if(op & 1){
         Scene_MenuBase.prototype.createBackground.call(this);
@@ -2850,11 +2946,39 @@ Scene_Book.prototype.createBackground = function(){
     if(op & 2){
         this.createFullBackground();
     }
-    if(op & 4){
-        this.createMultiBgImages();
+
+    if((op & 4) || (op & 8)){
+        if(customBg !== undefined && customBg.mode & 8){
+            this.createSingleBgImage(customBg.file);
+        }
+        else if(customBg !== undefined && customBg.mode & 4){
+            if(op & 8){
+                this.createSingleBgImage(TAA.bm.Parameters.DetachedBgImages["Single Image"]);
+                this.createMultiBgImages(undefined, customBg.file);
+            }
+            else if(op & 4){
+                this.createMultiBgImages(TAA.bm.Parameters.DetachedBgImages["Multiple Images - Title"], customBg.file);
+            }
+            else{
+                this.createMultiBgImages(undefined, customBg.file);
+            }
+        }
+        else{
+            if(op & 4){
+                this.createMultiBgImages(TAA.bm.Parameters.DetachedBgImages["Multiple Images - Title"], TAA.bm.Parameters.DetachedBgImages["Multiple Images - Text"]);
+            }
+            if(op & 8){
+                this.createSingleBgImage(TAA.bm.Parameters.DetachedBgImages["Single Image"]);
+            }
+        }
     }
-    if(op & 8){
-        this.createSingleBgImage();
+    else{
+        if(customBg !== undefined && customBg.mode & 8){
+            this.createSingleBgImage(customBg.file);
+        }
+        else if(customBg !== undefined && customBg.mode & 4){
+            this.createMultiBgImages(undefined, customBg.file);
+        }
     }
 };
 
@@ -2868,9 +2992,9 @@ Scene_Book.prototype.createFullBackground = function(){
     }
 };
 
-Scene_Book.prototype.createMultiBgImages = function(){
-    var ttlImgFile = TAA.bm.Parameters.DetachedBgImages["Multiple Images - Title"];
-    var txtImgFile = TAA.bm.Parameters.DetachedBgImages["Multiple Images - Text"];
+Scene_Book.prototype.createMultiBgImages = function(titleFile, textFile){
+    var ttlImgFile = titleFile;
+    var txtImgFile = textFile;
     if(ttlImgFile !== undefined && ttlImgFile !== ""){
         this.createTitleBackground(ttlImgFile);
     }
@@ -2879,8 +3003,8 @@ Scene_Book.prototype.createMultiBgImages = function(){
     }
 };
 
-Scene_Book.prototype.createSingleBgImage = function(){
-    var imgFile = TAA.bm.Parameters.DetachedBgImages["Single Image"];
+Scene_Book.prototype.createSingleBgImage = function(imageFile){
+    var imgFile = imageFile;
     if(imgFile !== undefined && imgFile !== ""){
         var x = this._titleWindow.x;
         var y = this._titleWindow.y;
@@ -2933,6 +3057,9 @@ Scene_BookMenu.prototype.constructor = Scene_BookMenu;
 
 Scene_BookMenu.prototype.initialize = function() {
     Scene_MenuBase.prototype.initialize.call(this);
+    this._previousBook = undefined;
+    this._bgStackSize = 0;
+    this._waitCounter = false;
 };
 
 Scene_BookMenu.prototype.create = function() {
@@ -2980,6 +3107,7 @@ Scene_BookMenu.prototype.createListWindow = function(){
 Scene_BookMenu.prototype.onListCancel = function(){
     this._titleWindow._bookKey = undefined;
     this._textWindow._bookKey = undefined;
+    $dataBooks.resetCurrentBook();
     this.popScene();
 };
 
@@ -3005,6 +3133,9 @@ Scene_BookMenu.prototype.onTextCancel = function(){
 // Background image functions
 Scene_BookMenu.prototype.createBackground = function(){
     var op = TAA.bm.Parameters.MenuBgImages.Option;
+    var customBg = $dataBooks.customBg();
+    if(customBg !== undefined && (customBg.mode & 2) !== 2) customBg = undefined;
+
     if(op === undefined) op = 1;
     if(op & 1){
         Scene_MenuBase.prototype.createBackground.call(this);
@@ -3012,20 +3143,87 @@ Scene_BookMenu.prototype.createBackground = function(){
     if(op & 2){
         this.createFullBackground();
     }
-    if(op & 4){
-        this.createBgImagesSinglePlusList();
+
+    if(op % 4 === 0){
+        if(op & 4){
+            this.customBgSinglePlusList(customBg);
+        }
+        if(op & 8){
+            this.customBgSinglePlusTitle(customBg);
+        }
+        if(op & 16){
+            this.customBgSinglePlusText(customBg);
+        }
+        if(op & 32){
+            this.customBgMultiBgImages(customBg);
+        }
+        if(op & 64){
+            this.createSingleBgImage(customBg);
+            if(customBg !== undefined && customBg.mode & 8){
+                this.createTitleAndTextBackground(customBg.file);
+            }
+            else if(customBg !== undefined && customBg.mode & 4){
+                this.createTextBackground(customBg.file);
+            }
+        }
     }
-    if(op & 8){
-        this.createBgImagesSinglePlusTitle();
+    else{
+        if(customBg !== undefined && customBg.mode & 8){
+            this.createListAndTextBackground(customBg.file);
+        }
+        else if(customBg !== undefined && customBg.mode & 4){
+            this.createTextBackground(customBg.file);
+        }
     }
-    if(op & 16){
-        this.createBgImagesSinglePlusText();
+
+    this._bgStackSize = this.children.length;
+};
+
+Scene_BookMenu.prototype.customBgSinglePlusList = function(customBg){
+    if(customBg !== undefined && customBg.mode & 8){
+        this.createBgImagesSinglePlusList(TAA.bm.Parameters.MenuBgImages["Multiple Images - List"], customBg.file, true);
     }
-    if(op & 32){
-        this.createMultiBgImages();
+    else if(customBg !== undefined && customBg.mode & 4){
+        this.createBgImagesSinglePlusList(TAA.bm.Parameters.MenuBgImages["Multiple Images - List"], customBg.file, false);
     }
-    if(op & 64){
-        this.createSingleBgImage();
+    else{
+        this.createBgImagesSinglePlusList(TAA.bm.Parameters.MenuBgImages["Multiple Images - List"], TAA.bm.Parameters.MenuBgImages["Single Image - Title / Text"], true);
+    }
+};
+
+Scene_BookMenu.prototype.customBgSinglePlusTitle = function(customBg){
+    if(customBg !== undefined && customBg.mode & 8){
+        this.createBgImagesSinglePlusTitle(TAA.bm.Parameters.MenuBgImages["Single Image - Text / List"], undefined, customBg.file);
+    }
+    else if(customBg !== undefined && customBg.mode & 4){
+        this.createBgImagesSinglePlusTitle(TAA.bm.Parameters.MenuBgImages["Single Image - Text / List"], TAA.bm.Parameters.MenuBgImages["Multiple Images - Title"], customBg.file);
+    }
+    else{
+        this.createBgImagesSinglePlusTitle(TAA.bm.Parameters.MenuBgImages["Single Image - Text / List"], TAA.bm.Parameters.MenuBgImages["Multiple Images - Title"], undefined);
+    }
+};
+
+Scene_BookMenu.prototype.customBgSinglePlusText = function(customBg){
+    if(customBg !== undefined && customBg.mode & 8){
+        this.createBgImagesSinglePlusText(TAA.bm.Parameters.MenuBgImages["Single Image - Title / List"], customBg.file, true);
+    }
+    else if(customBg !== undefined && customBg.mode & 4){
+        this.createBgImagesSinglePlusText(TAA.bm.Parameters.MenuBgImages["Single Image - Title / List"], customBg.file, false);
+    }
+    else{
+        this.createBgImagesSinglePlusText(TAA.bm.Parameters.MenuBgImages["Single Image - Title / List"], TAA.bm.Parameters.MenuBgImages["Multiple Images - Text"], false);
+    }
+};
+
+Scene_BookMenu.prototype.customBgMultiBgImages = function(customBg){
+    if(customBg !== undefined && customBg.mode & 8){
+        this.createBgImagesSinglePlusList(TAA.bm.Parameters.MenuBgImages["Multiple Images - List"], customBg.file, true);
+    }
+    else if(customBg !== undefined && customBg.mode & 4){
+        this.createMultiBgImages(TAA.bm.Parameters.MenuBgImages["Multiple Images - Title"], customBg.file, TAA.bm.Parameters.MenuBgImages["Multiple Images - List"]);
+    }
+    else{
+        this.createMultiBgImages(TAA.bm.Parameters.MenuBgImages["Multiple Images - Title"], TAA.bm.Parameters.MenuBgImages["Multiple Images - Text"], TAA.bm.Parameters.MenuBgImages["Multiple Images - List"]);
     }
 };
 
@@ -3039,70 +3237,62 @@ Scene_BookMenu.prototype.createFullBackground = function(){
     }
 };
 
-Scene_BookMenu.prototype.createBgImagesSinglePlusList = function(){
-    var imgFile = TAA.bm.Parameters.MenuBgImages["Single Image - Title / Text"];
-    var listImg = TAA.bm.Parameters.MenuBgImages["Multiple Images - List"];
+Scene_BookMenu.prototype.createBgImagesSinglePlusList = function(listFile, imageFile, includeTitle){
+    var imgFile = imageFile;
+    var listImg = listFile;
     if(imgFile !== undefined && imgFile !== ""){
-        var x = this._titleWindow.x;
-        var y = this._titleWindow.y;
-        var width = Math.min(this._titleWindow.width, this._textWindow.width);
-        var height = this._titleWindow.height + this._textWindow.height;
-
-        this._titleTextBackground = new TilingSprite();
-        this._titleTextBackground.move(x, y, width, height);
-        this._titleTextBackground.bitmap = ImageManager.loadPicture(imgFile);
-        this.addChild(this._titleTextBackground);
+        if(includeTitle) this.createTitleAndTextBackground(imgFile);
+        else{
+            this.createTitleBackground(TAA.bm.Parameters.MenuBgImages["Single Image - Title / Text"]);
+            this.createTextBackground(imgFile);
+        }
     }
     if(listImg !== undefined && listImg !== ""){
         this.createListBackground(listImg);
     }
 };
 
-Scene_BookMenu.prototype.createBgImagesSinglePlusTitle = function(){
-    var imgFile = TAA.bm.Parameters.MenuBgImages["Single Image - Text / List"];
-    var titleImg = TAA.bm.Parameters.MenuBgImages["Multiple Images - Title"];
-    if(imgFile !== undefined && imgFile !== ""){
-        var x = this._listWindow.x;
-        var y = this._listWindow.y;
-        var width = this._listWindow.width + this._textWindow.width;
-        var height = Math.max(this._listWindow.height, this._textWindow.height);
-
-        this._textListBackground = new TilingSprite();
-        this._textListBackground.move(x, y, width, height);
-        this._textListBackground.bitmap = ImageManager.loadPicture(imgFile);
-        this.addChild(this._textListBackground);
+Scene_BookMenu.prototype.createBgImagesSinglePlusTitle = function(combinedFile, titleFile, textFile){
+    var imgFile = combinedFile;
+    var ttlImg = titleFile;
+    var txtImg = textFile;
+    if(txtImg === undefined && imgFile !== undefined && imgFile !== ""){
+        this.createListAndTextBackground(imgFile);
     }
-    if(titleImg !== undefined && titleImg !== ""){
-        this.createTitleBackground(titleImg);
+    if(txtImg !== undefined && txtImg !== ""){
+        if(ttlImg === undefined){
+            if(combinedFile !== undefined && combinedFile !== "")
+                this.createListBackground(combinedFile);
+            this.createTitleAndTextBackground(txtImg);
+        } 
+        else{
+            if(combinedFile !== undefined && combinedFile !== "")
+                this.createListBackground(combinedFile);
+            this.createTextBackground(txtImg);
+        }
+    }
+    if(ttlImg !== undefined && ttlImg !== ""){
+        this.createTitleBackground(ttlImg);
     }
 };
 
-Scene_BookMenu.prototype.createBgImagesSinglePlusText = function(){
-    var imgFile = TAA.bm.Parameters.MenuBgImages["Single Image - Title / List"];
-    var textImg = TAA.bm.Parameters.MenuBgImages["Multiple Images - Text"];
+Scene_BookMenu.prototype.createBgImagesSinglePlusText = function(combinedFile, textFile, includeTitle){
+    var imgFile = combinedFile;
+    var textImg = textFile;
     if(imgFile !== undefined && imgFile !== ""){
-        var x = Math.min(this._titleWindow.x, this._listWindow.x);
-        var y = Math.min(this._titleWindow.y, this._listWindow.y);
-        if(this._titleWindow.width === this._listWindow.width)
-            var width = this._titleWindow.width;
-        else
-            var width = Math.min(this._titleWindow.width + this._listWindow.width, Graphics.boxWidth);
-        var height = Math.min(this._titleWindow.height + this._listWindow.height, Graphics.boxHeight);
-
-        this._titleListBackground = new TilingSprite();
-        this._titleListBackground.move(x, y, width, height);
-        this._titleListBackground.bitmap = ImageManager.loadPicture(imgFile);
-        this.addChild(this._titleListBackground);
+        if(includeTitle) this.createListBackground(imgFile);
+        else this.createTitleAndListBackground(imgFile);
     }
     if(textImg !== undefined && textImg !== ""){
-        this.createTextBackground(textImg);
+        if(includeTitle) this.createTitleAndTextBackground(textImg);
+        else this.createTextBackground(textImg);
     }
 };
 
-Scene_BookMenu.prototype.createMultiBgImages = function(){
-    var ttlImgFile = TAA.bm.Parameters.MenuBgImages["Multiple Images - Title"];
-    var txtImgFile = TAA.bm.Parameters.MenuBgImages["Multiple Images - Text"];
-    var lstImgFile = TAA.bm.Parameters.MenuBgImages["Multiple Images - List"];
+Scene_BookMenu.prototype.createMultiBgImages = function(titleFile, textFile, listFile){
+    var ttlImgFile = titleFile;
+    var txtImgFile = textFile;
+    var lstImgFile = listFile;
     if(ttlImgFile !== undefined && ttlImgFile !== ""){
         this.createTitleBackground(ttlImgFile);
     }
@@ -3147,7 +3337,7 @@ Scene_BookMenu.prototype.createTitleBackground = function(imgFile){
     this.addChild(this._titleBackground);
 };
 
-Scene_BookMenu.prototype.createTextBackground = function(imgFile){
+Scene_BookMenu.prototype.createTextBackground = function(imgFile, index){
     var window = this._textWindow;
     var x = window.x;
     var y = window.y;
@@ -3157,7 +3347,8 @@ Scene_BookMenu.prototype.createTextBackground = function(imgFile){
     this._textBackground = new TilingSprite();
     this._textBackground.move(x, y, width, height);
     this._textBackground.bitmap = ImageManager.loadPicture(imgFile);
-    this.addChild(this._textBackground);
+    if(index) this.addChildAt(this._textBackground, index);
+    else this.addChild(this._textBackground);
 };
 
 Scene_BookMenu.prototype.createListBackground = function(imgFile){
@@ -3171,6 +3362,80 @@ Scene_BookMenu.prototype.createListBackground = function(imgFile){
     this._listBackground.move(x, y, width, height);
     this._listBackground.bitmap = ImageManager.loadPicture(imgFile);
     this.addChild(this._listBackground);
+};
+
+Scene_BookMenu.prototype.createTitleAndTextBackground = function(imgFile, index){
+    var x = this._titleWindow.x;
+    var y = this._titleWindow.y;
+    var width = Math.min(this._titleWindow.width, this._textWindow.width);
+    var height = this._titleWindow.height + this._textWindow.height;
+
+    this._titleTextBackground = new TilingSprite();
+    this._titleTextBackground.move(x, y, width, height);
+    this._titleTextBackground.bitmap = ImageManager.loadPicture(imgFile);
+    if(index) this.addChildAt(this._titleTextBackground, index);
+    else this.addChild(this._titleTextBackground);
+};
+
+Scene_BookMenu.prototype.createTitleAndListBackground = function(imgFile){
+    var x = Math.min(this._titleWindow.x, this._listWindow.x);
+    var y = Math.min(this._titleWindow.y, this._listWindow.y);
+    if(this._titleWindow.width === this._listWindow.width)
+        var width = this._titleWindow.width;
+    else
+        var width = Math.min(this._titleWindow.width + this._listWindow.width, Graphics.boxWidth);
+    var height = Math.min(this._titleWindow.height + this._listWindow.height, Graphics.boxHeight);
+
+    this._titleListBackground = new TilingSprite();
+    this._titleListBackground.move(x, y, width, height);
+    this._titleListBackground.bitmap = ImageManager.loadPicture(imgFile);
+    this.addChild(this._titleListBackground);
+};
+
+Scene_BookMenu.prototype.createListAndTextBackground = function(imgFile){
+    var x = this._listWindow.x;
+    var y = this._listWindow.y;
+    var width = this._listWindow.width + this._textWindow.width;
+    var height = Math.max(this._listWindow.height, this._textWindow.height);
+
+    this._textListBackground = new TilingSprite();
+    this._textListBackground.move(x, y, width, height);
+    this._textListBackground.bitmap = ImageManager.loadPicture(imgFile);
+    this.addChild(this._textListBackground);
+};
+
+var _alias_t = Scene_Base.prototype.updateChildren;
+Scene_BookMenu.prototype.updateChildren = function(){
+    var customBg = $dataBooks.customBgByKey(this._textWindow._bookKey);
+    var index = this.children.length-1;
+    if(this._previousBook !== this._textWindow._bookKey){
+        this._previousBook = this._textWindow._bookKey;
+        this._waitCounter = true;
+    }
+    else{
+        if(this._waitCounter && this._textWindow._freezeFrames <= 0){
+            if(customBg !== undefined && customBg.mode & 8){
+                this.removeCustomBg(index);
+                this.createTitleAndTextBackground(customBg.file, index);
+            }
+            else if(customBg !== undefined && customBg.mode & 4){
+                this.removeCustomBg(index);
+                this.createTextBackground(customBg.file, index);
+            }
+            else{
+                this.removeCustomBg(index);
+            }
+            this._waitCounter = false;
+        }
+    }
+
+    Scene_Base.prototype.updateChildren.call(this);
+};
+
+Scene_BookMenu.prototype.removeCustomBg = function(index){
+    while(index > this._bgStackSize){
+        this.children.splice(--index, 1);
+    }
 };
 
 //=============================================================================
