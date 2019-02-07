@@ -32,6 +32,11 @@
                 "customBg": "Sword",
                 "customBgMode": 7
             },
+            "InlineImages": {
+                "title": "Inline Images",
+                "text": "The escape code % img(\"filename\") (no espace \nbetween % and img) can be used to include an \nimage along with the book text in its original \nsize (or resized to fit into window, see next \nsection). The plugin will always look for images\nin PNG format in the pictures folder.\n\nEx.: % img(\"Sword\")\n%img(\"Sword\")\nYou can also include optional parameters to \nforce the plugin to resize the image to your \nliking: % img(\"filename\", width, height) \n(again, no space between % and img). The code \nparameters width and height are percentile \nnumbers. For instance, if you want the image to \nbe displayed in half its original size use \n% img(\"filename\", 50, 50).\nEx.: % img(\"Sword\", 50, 50)\n%img(\"Sword\", 50, 50)\n\nEx.: % img(\"Sword\", 40, 20)\n%img(\"Sword\", 40, 20)\nOne additional note: images are loaded into \nmemory asynchronously. Which means the plugin \nwon't wait for it to be ready to show the book's \ntext. If, however, the image finishes loading \nand the screen is already showing your book's \ntext it will be automatically updated. In other \nwords, slower machines may see the book load \nwithout the image, just to see the screen \nautomatically update a few seconds later \nincluding it.",
+                "category": 0
+            },
             "DetachedTitle": {
                 "title": "Detached Title",
                 "text": "This parameter configures the title bar from the\ndetached window scene. All options are meant to\ncontrol a specific aspect of the window.\n\n Hide Title Bar\n  - Use this to hide the Title Window and show\n  only the Text window.\n Default: false",
@@ -86,6 +91,11 @@
             "PluginManagerBooks": {
                 "title": "Plugin Manager Books",
                 "text": " Category Order\n - This defines the order at which the categories\n will be listed in the list menu.\n\nBooks\n - Enter the book data directly through the\n Plugin Manager. Similarly to the JSON File\n approach, you must specify a Title, Text,\n Category and Id for each book. If you leave the\n Id the same for all books, the plugin will load\n them in the order they're placed in the plugin\n manager.\n\nIMPORTANT:\n  - Each book must have an unique name. Book\n  names will be used as keys by almost all plugin\n  available commands.\n  - Each book category must match a category\n  listed in the 'Category Order' parameter.",
+                "category": 1
+            },
+            "MiscParameters": {
+                "title": "Misc Parameters",
+                "text": "The Misc parameters are general configurations \nthat don't fit into any of other categories. \nHere you can find the following options:\n\nBreak Before Image\n - This defines if the plugin should \nautomatically add a line break (a blank line) \nbefore any images you insert. It's default \nvalue is false, since your book text will be \nmore human friendly if you manually include\na new line before the inline image code.\n\nForce Image Into Window\n - This basically tells the plugin if it is \nacceptable for an inline image to be bigger \nthan the window width. If set to true, an \nimage bigger then the window width will be \nresized to fit (using the same proportion \nfor height). If false, the image will be \nloaded into the window as is.",
                 "category": 1
             },
             "MainMenu": {

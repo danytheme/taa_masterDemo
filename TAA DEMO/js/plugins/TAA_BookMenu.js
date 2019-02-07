@@ -5,13 +5,13 @@
 
 var TAA = TAA || {};
 TAA.bm = {};
-TAA.bm.Version = "1.2.0";
+TAA.bm.Version = "1.3.0";
 TAA.bm.PluginName = "TAA_BookMenu";
 TAA.bm.alias = {};
 
 /*:
  *
- * @plugindesc [1.2.0] Create a Book Menu
+ * @plugindesc [1.3.0] Create a Book Menu
  * @author T. A. A. (taaspider)
  * 
  * @help
@@ -79,7 +79,7 @@ TAA.bm.alias = {};
  * 
  * Default:
  * 
- * X: Graphics.boxWdith / 12
+ * X: Graphics.boxWidth / 12
  * Y: Graphics.boxHeight / 10
  * Width: Graphics.boxWidth * 4/5
  * Height: this.fittingHeight(1)
@@ -229,7 +229,7 @@ TAA.bm.alias = {};
  * 
  * Default:
  * 
- * X: Graphics.boxWdith / 3
+ * X: Graphics.boxWidth / 3
  * Y: 0
  * Width: Graphics.boxWidth * 2/3
  * Height: this.fittingHeight(1)
@@ -367,6 +367,56 @@ TAA.bm.alias = {};
  * Do not include the custom background tags in your JSON file if you don't want
  * to use a custom image for the book, or leave "customBg" as an empty string.
  *  
+ * 
+ * =============================================================================
+ * Inline Images
+ * =============================================================================
+ *  
+ * The escape code % img("filename") (no espace between % and img) can be used
+ * to include an image along with the book text in its original size (or resized
+ * to fit into window, see next section). The plugin will always look for images
+ * in PNG format in the pictures folder.
+ * 
+ * Ex.: % img("Sword")
+ * %img("Sword");
+ * 
+ * You can also include optional parameters to force the plugin to resize the 
+ * image to your liking: % img("filename", width, height) (again, no space 
+ * between % and img). The code parameters width and height are percentile
+ * numbers. For instance, if you want the image to be displayed in half its
+ * original size use % img("filename", 50, 50).
+ * 
+ * Ex.: % img("Sword", 50, 50)
+ * %img("Sword", 50, 50)
+ * 
+ * Ex.: %img("Sword", 40, 20)
+ * %img("Sword", 40, 20)
+ * 
+ * One additional note: images are loaded into memory asynchronously. Which means
+ * the plugin won't wait for it to be ready to show the book's text. If, however,
+ * the image finishes loading and the screen is already showing your book's text
+ * it will be automatically updated. In other words, slower machines may
+ * see the book load without the image, just to see the screen automatically
+ * update a few seconds later including it.
+ * 
+ * =============================================================================
+ * Misc Parameters
+ * =============================================================================
+ * 
+ * The Misc parameters are general configurations that don't fit into any
+ * of other categories. Here you can find the following options:
+ * 
+ * Break Before Image
+ *  - This defines if the plugin should automatically add a line break (a
+ * blank line) before any images you insert. It's default value is false, 
+ * since your book text will be more human friendly if you manually include
+ * a new line before the inline image code.
+ * 
+ * Force Image Into Window
+ *  - This basically tells the plugin if it is acceptable for an inline image
+ * to be bigger than the window width. If set to true, an image bigger then the
+ * window width will be resized to fit (using the same proportion for height).
+ * If false, the image will be loaded into the window as is.
  * 
  * =============================================================================
  * Instructions - DataSources
@@ -689,6 +739,17 @@ TAA.bm.alias = {};
  * - Included the possibility to customize scene backgrounds with images.
  * The Detached Scene and Menu Scene have different configurations, so that
  * they can have different backgrounds if the dev wishes.
+ * Version 1.2.0:
+ * - Included a new feature allowing books to have custom background images that
+ * override the default ones. It comes with options to use the custom images on 
+ * the detached scene only, menu scene only, or both. The image can also be set 
+ * to cover only the text window or title + text windows.
+ * Version 1.3.0:
+ * - Fixed a bug caused by the custom background change of the previous version
+ * that could cause the game to crash when opening a book with no custom 
+ * background.
+ * - Reworked the Window_BookText prototype to allow inline images to be included
+ * along with a book text.
  *
  * ============================================================================
  * End of Help
@@ -865,6 +926,25 @@ TAA.bm.alias = {};
  * @type struct<MenuBgConfig>
  * @desc Configure images according to Background Image Options.
  * @default {"Full Background Image":"","Single Image":"","Multiple Images - Title":"","Multiple Images - Text":"","Multiple Images - List":""}
+ * 
+ * @param ---Misc---
+ * @default
+ * 
+ * @param Break Before Image
+ * @parent ---Misc---
+ * @type boolean
+ * @on YES
+ * @off NO
+ * @desc Automatically add a line break before inline images?
+ * @default false
+ * 
+ * @param Force Image Into Window
+ * @parent ---Misc---
+ * @type boolean
+ * @on YES
+ * @off NO
+ * @desc If image is bigger than the text window, shrink it to fit?
+ * @default true
  * 
  */
 
@@ -1629,6 +1709,9 @@ TAA.bm.Parameters.MenuBgImages = JSON.parse(Parameters['Menu Background Config']
 TAA.bm.Parameters.DetachedBgImages.Option = eval(Parameters['Detached Background Options']);
 TAA.bm.Parameters.MenuBgImages.Option = eval(Parameters['Menu Background Options']);
 
+TAA.bm.Parameters.Misc = TAA.bm.Parameters.Misc || {};
+TAA.bm.Parameters.Misc['Break Before Image'] = JSON.parse(Parameters['Break Before Image']);
+TAA.bm.Parameters.Misc['Force Image Into Window'] = JSON.parse(Parameters['Force Image Into Window']);
 
 //=============================================================================
 // DataManager
@@ -2622,10 +2705,15 @@ Window_BookText.prototype.constructor = Window_BookText;
 Window_BookText.prototype.initialize = function(x, y, width, height) {
     this._freezeFrames = 0;
     this._allTextHeight = 0;
+    this._printableObjects = [];
     if(this._isBookScene)
-        this._bookTextFormat = TAA.bm.Parameters.DetachedTextWindow['Book Text Format'] || "<Wordwrap>%3";
+        this._bookTextFormat = TAA.bm.Parameters.DetachedTextWindow['Book Text Format'] || "%3";
     else
-        this._bookTextFormat = TAA.bm.Parameters.MenuTextWindow['Book Text Format'] || "<Wordwrap>%3";
+        this._bookTextFormat = TAA.bm.Parameters.MenuTextWindow['Book Text Format'] || "%3";
+    this._breakBeforeImage = TAA.bm.Parameters.Misc['Break Before Image'];
+    if(this._breakBeforeImage === undefined) this._breakBeforeImage = false;
+    this._forceImgIntoWindow = TAA.bm.Parameters.Misc['Force Image Into Window'];
+    if(this._forceImgIntoWindow === undefined) this._forceImgIntoWindow = true;
     Window_Selectable.prototype.initialize.call(this, x, y, width, height);
     this.refresh();
 };
@@ -2688,12 +2776,79 @@ Window_BookText.prototype.refresh = function() {
     this.origin.y = 0;
     this._allTextHeight = 0;
     if(this._bookKey && this._bookKey !== ""){
-        var book = this.prepareBookText(this._bookKey);
-        this.setupTextState(book);
-        this.drawBookTextEx(book, 0, 0);
+        this.prepareBookText(this._bookKey);
+        this.drawPrintableObjects();
     }
     else{
         this.drawEmptyBook();
+    }
+};
+
+TAA.bm.alias.WindowBase = TAA.bm.alias.WindowBase || {};
+TAA.bm.alias.WindowBase.createContents = Window_Base.prototype.createContents;
+Window_BookText.prototype.createContents = function() {
+    var currentY = 0;
+    for(var i=0; i< this._printableObjects.length; i++){
+        var obj = this._printableObjects[i];
+        var position;
+        switch(obj.type){
+            case "text":
+                obj.y = currentY;
+                if(i < this._printableObjects.length && this._breakBeforeImage) 
+                    obj.content += '\n';
+                obj.textState = this.setupTextState(obj.content);
+                this._allTextHeight += this.calcTextHeight(obj.textState, true) * 10;
+                currentY += this.calcTextHeight(obj.textState, true);
+                break;
+            case "resized_image":
+                if(obj.content.isReady()){
+                    position = this.getImagePosition(obj.content, obj.dw, obj.dh);
+                }
+            case "image":
+                if(obj.content.isReady()){
+                    position = position || this.getImagePosition(obj.content);
+                    position.y = currentY;
+
+                    if(position.dh === undefined){
+                        position.dh = position.h;
+                        position.dw = position.w;
+                    }
+
+                    currentY += position.dh;
+                    this._allTextHeight += position.dh;
+                    obj.position = position;
+                }
+                break;
+            default:
+                console.error("Content type unknown");
+        }
+        this._printableObjects[i] = obj;
+    }
+
+    TAA.bm.alias.WindowBase.createContents.call(this);;
+};
+
+Window_BookText.prototype.drawPrintableObjects = function(){
+    this.createContents();
+    this._allTextHeight = 0;
+    for(var i=0; i< this._printableObjects.length; i++){
+        var obj = this._printableObjects[i];
+        switch(obj.type){
+            case "text":
+                this.drawBookTextEx(obj.content, 0, obj.y);
+                obj.printed = true;
+                break;
+            case "resized_image":
+            case "image":
+                if(obj.content.isReady()) {
+                    this._allTextHeight += obj.position.dh;
+                    this.drawPicture(obj.content, obj.position);
+                    obj.printed = true;
+                }
+                break;
+            default:
+                console.error("Content type unknown");
+        }
     }
 };
 
@@ -2701,13 +2856,104 @@ Window_BookText.prototype.prepareBookText = function(bookKey){
     var text = this._bookTextFormat.replace(/%1/g, $dataBooks.getBookTitle(bookKey));
     text = text.replace(/%2/g, $dataBooks.getBookCategory(bookKey));
     text = text.replace(/%3/g, $dataBooks.getBookText(bookKey));
-    return text;
+    
+    this.preparePrintableObjects(text);
+};
+
+Window_BookText.prototype.preparePrintableObjects = function(text){
+    this._printableObjects = [];
+    var splitArray = text.split(/(\%img\(\s*["'][^"']+["']\s*(?:,\s*[0-9\.]+\s*,\s*[0-9\.]+)?\s*\))/gm);
+    
+    for(var i=0; i < splitArray.length; i++){
+        var object = {};
+        if(splitArray[i].match(/\%img\(\s*["']([^"']+)["']\s*(?:,\s*([0-9\.]+)\s*,\s*([0-9\.]+))?\s*\)/gm)){
+            // If we get a match, this is an image tag.
+            // In this case we gather the info and request the
+            // image to be loaded
+            var fileName = RegExp.$1;
+            if(RegExp.$2 && RegExp.$3){
+                object.type = "resized_image";
+                object.dw = parseFloat(RegExp.$2);
+                object.dh = parseFloat(RegExp.$3);
+            }
+            else{
+                object.type = "image";
+            }
+            this._printableObjects.push(object);
+            this.loadPicture(fileName, object);
+        }
+        else if(splitArray[i] !== undefined && splitArray[i] !== ""){
+            // if the pattern is not found, this is not an image.
+            // Just push the text into the printable array
+            object.type = "text";
+            object.content = splitArray[i];
+            this._printableObjects.push(object);
+        }
+    }
 };
 
 Window_BookText.prototype.drawEmptyBook = function(){
     var text = TAA.bm.Parameters.MenuTextWindow['Empty Book Text'] || "";
+    if(text === undefined || text === "") return;
     var textState = this.setupTextState(text);
     this.drawBookTextEx(textState.originalText, 0, 0);
+};
+
+Window_BookText.prototype.getImagePosition = function(bitmap, dw, dh){
+    var position = {};
+    position.x = 0;
+    position.w = bitmap.width;
+    position.h = bitmap.height;
+    var width = bitmap.width;
+    var height = bitmap.height;
+    if(dw && dw > 0){
+        width = Math.round(width * (dw/100));
+        position.dw = width;
+    }
+    if(dh && dh > 0){
+        height = Math.round(height * (dh/100));
+        position.dh = height;
+    }
+    if(width <= this.width){
+        position.x = Math.round((this.width - width)/2);
+    }
+    else if(this._forceImgIntoWindow){
+        position.x = 0;
+        position.dw = this.width;
+        position.dh = Math.round((this.width/width) * height);
+    }
+    return position;
+};
+
+Window_BookText.prototype.drawPicture = function(bitmap, position){
+    this.contents.blt(bitmap, 0, 0, position.w, position.h, position.x, position.y, position.dw, position.dh);
+};
+
+Window_BookText.prototype.loadPicture = function(filename, printableObj) {
+    var index = this._printableObjects.indexOf(printableObj);
+    if(index < 0) return;
+
+    printableObj.content = ImageManager.loadPicture(filename);
+    this._printableObjects[index] = printableObj;
+    if (this._printableObjects[index].content.isReady()){
+        return;
+    }
+     
+    this._printableObjects[index].content.addLoadListener(this.forceRefresh.bind(this, index));
+};
+
+Window_BookText.prototype.forceRefresh = function(index){
+    if(!this.isObjectPrintNeeded(index)){
+        this._freezeFrames = 0;
+        this.refresh();
+    }
+};
+
+Window_BookText.prototype.isObjectPrintNeeded = function(index){
+    if(this._printableObjects && this._printableObjects[index] && this._printableObjects[index].printed)
+        return !this._printableObjects[index].printed;
+    else
+        return false;
 };
 
 Window_BookText.prototype.drawBookTextEx = function(text, x, y){
@@ -2723,7 +2969,8 @@ Window_BookText.prototype.drawBookTextEx = function(text, x, y){
         while (textState.index < textState.text.length) {
             this.processCharacter(textState);
         }
-        this._allTextHeight = textState.y - y + this.lineHeight();
+        var tmp = textState.y - y + this.lineHeight();
+        this._allTextHeight += textState.y - y + this.lineHeight();
         return textState.x - x;
     } else {
         return 0;
@@ -2734,9 +2981,8 @@ Window_BookText.prototype.setupTextState = function(text){
     var textState = { index: 0 };
     textState.originalText = text;
     textState.text = this.convertEscapeCharacters(text);
+    
     this.resetFontSettings();
-    this._allTextHeight = this.calcTextHeight(textState, true)*10;
-    this.createContents();
     return textState;
 };
 
@@ -2937,7 +3183,7 @@ Scene_Book.prototype.createBackground = function(){
     var op = TAA.bm.Parameters.DetachedBgImages.Option;
 
     var customBg = $dataBooks.customBg();
-    if((customBg.mode & 1) !== 1) customBg = undefined;
+    if(customBg && (customBg.mode & 1) !== 1) customBg = undefined;
 
     if(op === undefined) op = 1;
     if(op & 1){
