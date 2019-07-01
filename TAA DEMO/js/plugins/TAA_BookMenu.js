@@ -5,13 +5,13 @@
 
 var TAA = TAA || {};
 TAA.bm = {};
-TAA.bm.Version = "1.3.0";
+TAA.bm.Version = "1.3.1";
 TAA.bm.PluginName = "TAA_BookMenu";
 TAA.bm.alias = {};
 
 /*:
  *
- * @plugindesc [1.3.0] Create a Book Menu
+ * @plugindesc [1.3.1] Create a Book Menu
  * @author T. A. A. (taaspider)
  * 
  * @help
@@ -750,6 +750,9 @@ TAA.bm.alias = {};
  * background.
  * - Reworked the Window_BookText prototype to allow inline images to be included
  * along with a book text.
+ * Version 1.3.1:
+ * - Added a custom log function to help me debug future issues.
+ * - Fixed compatibility with Olivia_StateTooltipDisplay.
  *
  * ============================================================================
  * End of Help
@@ -2431,6 +2434,7 @@ Window_BookList.prototype.makeCommandList = function() {
 
 Window_BookList.prototype.addBookList = function(){
     var listCategory;
+    TAA.log(4, "Window_BookList: Starting addBookList loop");
     for(var cat in $dataBooks._bookKeyByCategory){
         var category = this.convertEscapeCharacters(cat);
         if($gameSystem.isBookCategoriesVisible())
@@ -2473,6 +2477,8 @@ Window_BookList.prototype.addBookList = function(){
             }
         }
     }
+    
+    TAA.log(4, "Window_BookList: addBookList loop end");
 };
 
 Window_BookList.prototype.prepareCategoryText = function(category, closed, count){
@@ -2487,26 +2493,33 @@ Window_BookList.prototype.selectLast = function() {
 };
 
 Window_BookList.prototype.update = function(){
+    TAA.log(4, "Window_BookList: Starting bookList update");
     Window_Command.prototype.update.call(this);
     if(this._textWindow){
         if(this.currentSymbol() === 'book'){
+            TAA.log(4, "Window_BookList: Selecting Book on text window");
             this._textWindow.setBook(this.currentExt(), true);
         }
         else{
+            TAA.log(4, "Window_BookList: Deselecting book on text window");
             this._textWindow.setBook(undefined, true);
         }
     }
     if(this._titleWindow){
         if(this.currentSymbol() === 'book'){
+            TAA.log(4, "Window_BookList: Setting the title window text");
             this._titleWindow.setBook(this.currentExt());
         }
         else{
+            TAA.log(4, "Window_BookList: Clearing title window text");
             this._titleWindow.setBook(undefined);
         }
     }
+    TAA.log(4, "Window_BookList: BookList update end");
 };
 
 Window_BookList.prototype.categoryToggle = function(category){
+    TAA.log(4, "Window_BookList: categoryToggle start");
     if(this._closedBookCategories.contains(category)){
         var index = this._closedBookCategories.indexOf(category);
         this._closedBookCategories.splice(index, 1);
@@ -2514,6 +2527,7 @@ Window_BookList.prototype.categoryToggle = function(category){
     else{
         this._closedBookCategories.push(category);
     }
+    TAA.log(4, "Window_BookList: categoryToggle end. Triggering refresh...");
     this.refresh();
 };
 
@@ -2769,15 +2783,22 @@ Window_BookText.prototype.setStandardOpacity = function() {
 };
 
 Window_BookText.prototype.refresh = function() {
+    TAA.log(4, "Window_BookText: Starting refresh.");
     if(this._freezeFrames > 0)
         return;
+    TAA.log(4, "Window_BookText: Clearing contents...");
     this.contents.clear();
+    TAA.log(4, "Window_BookText: Updating originY and textHeight");
     this._lastOriginY = -200;
     this.origin.y = 0;
     this._allTextHeight = 0;
+    TAA.log(4, "Window_BookText: Verifying book content...");
     if(this._bookKey && this._bookKey !== ""){
+        TAA.log(4, "Window_BookText: Preparing book...");
         this.prepareBookText(this._bookKey);
+        TAA.log(4, "Window_BookText: Drawing objects...");
         this.drawPrintableObjects();
+        TAA.log(4, "Window_BookText: Refresh finished.");
     }
     else{
         this.drawEmptyBook();
@@ -2787,6 +2808,7 @@ Window_BookText.prototype.refresh = function() {
 TAA.bm.alias.WindowBase = TAA.bm.alias.WindowBase || {};
 TAA.bm.alias.WindowBase.createContents = Window_Base.prototype.createContents;
 Window_BookText.prototype.createContents = function() {
+    TAA.log(4, "Window_BookText: createContents start");
     var currentY = 0;
     for(var i=0; i< this._printableObjects.length; i++){
         var obj = this._printableObjects[i];
@@ -2825,22 +2847,27 @@ Window_BookText.prototype.createContents = function() {
         this._printableObjects[i] = obj;
     }
 
-    TAA.bm.alias.WindowBase.createContents.call(this);;
+    TAA.bm.alias.WindowBase.createContents.call(this);
+    TAA.log(4, "Window_BookText: createContents end");
 };
 
 Window_BookText.prototype.drawPrintableObjects = function(){
+    TAA.log(4, "Window_BookText: starting drawPrintableObjects");
     this.createContents();
+    TAA.log(4, "Window_BookText: Starting print loop...");
     this._allTextHeight = 0;
     for(var i=0; i< this._printableObjects.length; i++){
         var obj = this._printableObjects[i];
         switch(obj.type){
             case "text":
+                TAA.log(4, "Window_BookText: Drawing text object...");
                 this.drawBookTextEx(obj.content, 0, obj.y);
                 obj.printed = true;
                 break;
             case "resized_image":
             case "image":
                 if(obj.content.isReady()) {
+                    TAA.log(4, "Window_BookText: Drawing image...");
                     this._allTextHeight += obj.position.dh;
                     this.drawPicture(obj.content, obj.position);
                     obj.printed = true;
@@ -2850,6 +2877,7 @@ Window_BookText.prototype.drawPrintableObjects = function(){
                 console.error("Content type unknown");
         }
     }
+    TAA.log(4, "Window_BookText: drawPrintableObjects end.");
 };
 
 Window_BookText.prototype.prepareBookText = function(bookKey){
@@ -2957,6 +2985,7 @@ Window_BookText.prototype.isObjectPrintNeeded = function(index){
 };
 
 Window_BookText.prototype.drawBookTextEx = function(text, x, y){
+    TAA.log(4, "Window_BookText: Starting drawBookTextEx...");
     if(text){
         var textState = { 
             index: 0,
@@ -2966,9 +2995,11 @@ Window_BookText.prototype.drawBookTextEx = function(text, x, y){
         textState.text = this.convertEscapeCharacters(text);
         textState.height = this.calcTextHeight(textState, false);
         this.resetFontSettings();
+        TAA.log(4, "Window_BookText: drawBookTextEx character processing loop...");
         while (textState.index < textState.text.length) {
             this.processCharacter(textState);
         }
+        TAA.log(4, "Window_BookText: Updating TextHeight...");
         var tmp = textState.y - y + this.lineHeight();
         this._allTextHeight += textState.y - y + this.lineHeight();
         return textState.x - x;
@@ -2999,6 +3030,7 @@ Window_BookText.prototype.contentsHeight = function(){
 }
 
 Window_BookText.prototype.update = function(){
+    TAA.log(4, "Window_BookText: Update start");
     Window_Selectable.prototype.update.call(this);
     if(this._freezeFrames > 0){
         this._freezeFrames -= 1;
@@ -3006,6 +3038,7 @@ Window_BookText.prototype.update = function(){
             this.refresh();
     }
     if (this.isOpenAndActive()) this.updateKeyScrolling();
+    TAA.log(4, "Window_BookText: Update end");
 };
 
 Window_BookText.prototype.lineHeight = function() {
@@ -3072,6 +3105,7 @@ Window_BookText.prototype.scrollOriginUp = function(speed) {
 };
 
 Window_BookText.prototype.updateKeyScrolling = function() {
+    TAA.log(4, "Window_BookText: Update key scrolling start");
     if (Input.isPressed('up')) {
         this.scrollOriginUp(this.scrollSpeed());
     } else if (Input.isPressed('down')) {
@@ -3081,6 +3115,7 @@ Window_BookText.prototype.updateKeyScrolling = function() {
     } else if (Input.isPressed('pagedown')) {
         this.scrollOriginDown(this.scrollSpeed() * 4);
     }
+    TAA.log(4, "Window_BookText: Update key scrolling end");
 };
 
 Window_BookText.prototype.updateArrows = function() {
@@ -3301,6 +3336,16 @@ function Scene_BookMenu() {
 Scene_BookMenu.prototype = Object.create(Scene_MenuBase.prototype);
 Scene_BookMenu.prototype.constructor = Scene_BookMenu;
 
+Scene_BookMenu.prototype.createWindowLayer = function() {
+    var width = Graphics.boxWidth;
+    var height = Graphics.boxHeight;
+    var x = (Graphics.width - width) / 2;
+    var y = (Graphics.height - height) / 2;
+    this._windowLayer = new WindowLayer();
+    this._windowLayer.move(x, y, width, height);
+    this.addChild(this._windowLayer);
+};
+
 Scene_BookMenu.prototype.initialize = function() {
     Scene_MenuBase.prototype.initialize.call(this);
     this._previousBook = undefined;
@@ -3313,7 +3358,11 @@ Scene_BookMenu.prototype.create = function() {
     this.createTextWindow();
     this.createListWindow();
     Scene_MenuBase.prototype.create.call(this);
+    TAA.log(3, "Scene_BookMenu: Children before adding windows:");
+    TAA.log(3, this.children);
     this.addWindows();
+    TAA.log(3, "Scene_BookMenu: Children after adding windows:");
+    TAA.log(3, this.children);
 };
 
 Scene_BookMenu.prototype.start = function() {
@@ -3423,6 +3472,7 @@ Scene_BookMenu.prototype.createBackground = function(){
     }
 
     this._bgStackSize = this.children.length;
+    TAA.log(3, "Scene_BookMenu: Stack Size = " + this._bgStackSize);
 };
 
 Scene_BookMenu.prototype.customBgSinglePlusList = function(customBg){
@@ -3659,6 +3709,10 @@ Scene_BookMenu.prototype.updateChildren = function(){
     }
     else{
         if(this._waitCounter && this._textWindow._freezeFrames <= 0){
+            TAA.log(3, "Scene_BookMenu: customBg:");
+            TAA.log(3, customBg);
+            TAA.log(3, "Scene_BookMenu: Children:");
+            TAA.log(3, this.children);
             if(customBg !== undefined && customBg.mode & 8){
                 this.removeCustomBg(index);
                 this.createTitleAndTextBackground(customBg.file, index);
@@ -3678,6 +3732,14 @@ Scene_BookMenu.prototype.updateChildren = function(){
 };
 
 Scene_BookMenu.prototype.removeCustomBg = function(index){
+    TAA.log(3, "Scene_BookMenu: removeCustomBg call for index " + index);
+    TAA.log(3, "Scene_BookMenu: Children:")
+    TAA.log(3, this.children);
+    TAA.log(3, "Scene_BookMenu: Child on index " + index);
+    TAA.log(3, this.children[1]);
+    TAA.log(3, "Scene_BookMenu: Child object type: " + this.children[index]);
+    TAA.log(3, this._windowLayer);
+    
     while(index > this._bgStackSize){
         this.children.splice(--index, 1);
     }
@@ -3710,3 +3772,15 @@ TouchInput._onMouseMove = function(event){
     this._mouseOverX = Graphics.pageToCanvasX(event.pageX);
     this._mouseOverY = Graphics.pageToCanvasY(event.pageY);
 };
+
+// Trace can be a number between 0 and 4
+// The higher the number, the more verbose is the plugin
+TAA.bm.trace = 0;
+if(TAA.log === undefined){
+    TAA.log = function(trace, msg){
+        trace = trace | 0;
+        if(trace <= TAA.bm.trace){
+            console.log(msg);
+        }
+    }
+}
