@@ -5,13 +5,13 @@
 
 var TAA = TAA || {};
 TAA.bm = {};
-TAA.bm.Version = "1.3.1";
+TAA.bm.Version = "1.3.2";
 TAA.bm.PluginName = "TAA_BookMenu";
 TAA.bm.alias = {};
 
 /*:
  *
- * @plugindesc [1.3.1] Create a Book Menu
+ * @plugindesc [1.3.2] Create a Book Menu
  * @author T. A. A. (taaspider)
  * 
  * @help
@@ -753,6 +753,9 @@ TAA.bm.alias = {};
  * Version 1.3.1:
  * - Added a custom log function to help me debug future issues.
  * - Fixed compatibility with Olivia_StateTooltipDisplay.
+ * Version 1.3.2:
+ * - Fixed compatibility with MOG_MenuCursor (and probably with most plugins that
+ * creates a new layer over the scene as long as it stays over the WindowLayer)
  *
  * ============================================================================
  * End of Help
@@ -2805,8 +2808,8 @@ Window_BookText.prototype.refresh = function() {
     }
 };
 
-TAA.bm.alias.WindowBase = TAA.bm.alias.WindowBase || {};
-TAA.bm.alias.WindowBase.createContents = Window_Base.prototype.createContents;
+TAA.bm.alias.WindowSelectable = TAA.bm.alias.WindowSelectable || {};
+TAA.bm.alias.WindowSelectable.createContents = Window_Selectable.prototype.createContents;
 Window_BookText.prototype.createContents = function() {
     TAA.log(4, "Window_BookText: createContents start");
     var currentY = 0;
@@ -2847,7 +2850,7 @@ Window_BookText.prototype.createContents = function() {
         this._printableObjects[i] = obj;
     }
 
-    TAA.bm.alias.WindowBase.createContents.call(this);
+    TAA.bm.alias.WindowSelectable.createContents.call(this);
     TAA.log(4, "Window_BookText: createContents end");
 };
 
@@ -3118,16 +3121,23 @@ Window_BookText.prototype.updateKeyScrolling = function() {
     TAA.log(4, "Window_BookText: Update key scrolling end");
 };
 
+TAA.bm.alias.WindowSelectable = TAA.bm.alias.WindowSelectable || {};
+TAA.bm.alias.WindowSelectable.updateArrows = Window_Selectable.prototype.updateArrows;
 Window_BookText.prototype.updateArrows = function() {
+    TAA.log(3, "updateArrows custom code start");
     if (this._lastOriginY === this.origin.y) return;
     this.showArrows();
+    TAA.log(3, "updateArrows custom code end");
+    TAA.log(3, "updateArrows calling alias");
+    TAA.bm.alias.WindowSelectable.updateArrows.call(this);
+    TAA.log(3, "updateArrows end");
 };
 
 Window_BookText.prototype.showArrows = function() {
     this._lastOriginY = this.origin.y;
     this.upArrowVisible = this.origin.y !== 0;
     this.downArrowVisible = this.origin.y !== this.contentsHeight() -
-    this.height + 2 * this.standardPadding();;
+    this.height + 2 * this.standardPadding();
 };
 
 Window_BookText.prototype.hideArrows = function() {
@@ -3150,6 +3160,10 @@ Window_BookText.prototype.processWheel = function() {
   if (TouchInput.wheelY <= -threshold) {
     this.scrollOriginUp(this.scrollSpeed() * 4);
   }
+};
+
+Window_BookText.prototype.whoAmI = function(){
+    return "Window_BookText";
 };
 
 
@@ -3471,7 +3485,7 @@ Scene_BookMenu.prototype.createBackground = function(){
         }
     }
 
-    this._bgStackSize = this.children.length;
+    this._bgStackSize = this.getWindowLayerIndex()+1;
     TAA.log(3, "Scene_BookMenu: Stack Size = " + this._bgStackSize);
 };
 
@@ -3700,9 +3714,30 @@ Scene_BookMenu.prototype.createListAndTextBackground = function(imgFile){
     this.addChild(this._textListBackground);
 };
 
+Scene_BookMenu.prototype.getWindowLayerIndex = function(){
+    var index = this.children.length-1;
+    var found = false;
+    while(index >= 0 && !found){
+        var obj = this.children[index];
+        TAA.log(3, "Layer child at index " + index);
+        TAA.log(3, obj);
+        if(obj.children.length >= 1 && obj.children[1].whoAmI !== undefined){
+            if(obj.children[1].whoAmI() == "Window_BookText")
+                found = true;
+            else
+                index--;
+        }
+        else
+            index--;
+    }
+
+    if(index < 0) return this.children.length-1;
+    else return index;
+};
+
 Scene_BookMenu.prototype.updateChildren = function(){
     var customBg = $dataBooks.customBgByKey(this._textWindow._bookKey);
-    var index = this.children.length-1;
+    var index = this.getWindowLayerIndex();
     if(this._previousBook !== this._textWindow._bookKey){
         this._previousBook = this._textWindow._bookKey;
         this._waitCounter = true;
@@ -3739,7 +3774,8 @@ Scene_BookMenu.prototype.removeCustomBg = function(index){
     TAA.log(3, this.children[1]);
     TAA.log(3, "Scene_BookMenu: Child object type: " + this.children[index]);
     TAA.log(3, this._windowLayer);
-    
+    TAA.log(3, "Scene_BookMenu: _bgStackSize: " + this._bgStackSize);
+
     while(index > this._bgStackSize){
         this.children.splice(--index, 1);
     }
