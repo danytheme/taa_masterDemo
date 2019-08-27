@@ -9,12 +9,14 @@
         "books": {
             "Introduction": {
                 "title": "Introduction",
+                "titleColor": 1,
                 "text": "WARNING: This plugin requires RPG Maker MV 1.5.0 \nor above! Please make sure your RPG Maker MV \nsoftware is up to date before using this plugin.\n\n--------------------------------------------------\n\nWhen we create a game, we usually create a whole \nnew world rich in lore and details, and want to \nmake it all available to the players, so that they \ncan understand every single detail we develop. \nHowever, just dumping it all in lengthy dialogues \nusually bore and scare most of the players, who \nwill simply give up on your world.\n\nA common alternative used by many AAA games is to \nminimize dialogue and exposition, and provide \nadditional details through in-game books.\n\nThis plugin aims to provide just that for your \ngame: a book menu where the player can read up \nadditional lore when he feels up to it. You can \nplace books throughout your game, providing a bit \nmore of context for hungry players as they \nprogress, and keeping exposition to a minimum.",
                 "category": 0,
                 "id": 0
             },
             "DifferentScenes": {
                 "title": "Different Scenes",
+                "titleColor": 8,
                 "text": "This plugin provides two different types of \nscenes.\n\nThe first one is a detached book window, that \nshows only one book at a time (title and book \ncontents). It is a simpler version meant to be \nused when the player finds a new book while \nexploring your world. You can set it up so that \nthe book will then be made available in the menu \nso that the player can read it anytime he wants, \nor not.\n\nThe second scene is kind of a \"player library\". \nIt is meant to be accessed from the main menu \nand list all books known to the player (you can \nset it up to show all books EVER, or only those \nthe player has found while exploring).",
                 "category": 0,
                 "id": 1

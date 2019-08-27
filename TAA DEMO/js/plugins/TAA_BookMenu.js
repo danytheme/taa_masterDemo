@@ -5,13 +5,13 @@
 
 var TAA = TAA || {};
 TAA.bm = {};
-TAA.bm.Version = "1.3.2";
+TAA.bm.Version = "1.3.3";
 TAA.bm.PluginName = "TAA_BookMenu";
 TAA.bm.alias = {};
 
 /*:
  *
- * @plugindesc [1.3.2] Create a Book Menu
+ * @plugindesc [1.3.3] Create a Book Menu
  * @author T. A. A. (taaspider)
  * 
  * @help
@@ -756,6 +756,14 @@ TAA.bm.alias = {};
  * Version 1.3.2:
  * - Fixed compatibility with MOG_MenuCursor (and probably with most plugins that
  * creates a new layer over the scene as long as it stays over the WindowLayer)
+ * Version 1.3.3:
+ * - Fixed bug that caused odd window behavior when two or more books in a row
+ * had custom backgrounds.
+ * - Fixed bugs that interfered with windowskin and window opacity parameters
+ * - Option added to set a custom color for book titles only in the title section.
+ * When in book menu, it will appear with default color in the list section while
+ * using the custom color in the title section. Use escape codes if you the same
+ * color on both sections.
  *
  * ============================================================================
  * End of Help
@@ -1515,6 +1523,11 @@ TAA.bm.alias = {};
  * @default title
  * @desc What is the name of the object within our context containing the book title?
  * 
+ * @param Window Title Color Object
+ * @type text
+ * @default titleColor
+ * @desc What is the name of the object within our context that specifies title window text color?
+ * 
  * @param Text Object
  * @type text
  * @default text
@@ -1629,6 +1642,11 @@ TAA.bm.alias = {};
  * @type text
  * @default
  * @desc The book title.
+ * 
+ * @param Title Window Text Color
+ * @type number
+ * @default 0
+ * @desc Custom color to use on the book title when inside the book menu.
  * 
  * @param Text
  * @type note
@@ -1771,6 +1789,7 @@ LibraryData.prototype.loadBooksFromFile = function() {
     this._bookFile = TAA.bm.Parameters.JsonConfig.File;
     this._bookRootContext = TAA.bm.Parameters.JsonConfig['Root Context Path'];
     this._bookTitleObject = TAA.bm.Parameters.JsonConfig['Title Object'];
+    this._bookMenuTitleColorObject = TAA.bm.Parameters.JsonConfig['Window Title Color Object'];
     this._bookTextObject = TAA.bm.Parameters.JsonConfig['Text Object'];
     this._bookCategoryObject = TAA.bm.Parameters.JsonConfig['Category Object'];
     this._bookIdObject = TAA.bm.Parameters.JsonConfig['ID Object'];
@@ -1851,6 +1870,7 @@ LibraryData.prototype.loadBooksFromParameters = function(){
     this._bookFile = undefined;
     this._bookRootContext = undefined;
     this._bookTitleObject = "Title";
+    this._bookMenuTitleColorObject = "Title Window Text Color";
     this._bookTextObject = "Text";
     this._bookCategoryObject = "Category";
     this._bookIdObject = "Id";
@@ -1861,6 +1881,8 @@ LibraryData.prototype.loadBooksFromParameters = function(){
         var b = JSON.parse(books[i]);
         b.Text = JSON.parse(b.Text);
         b.Id = JSON.parse(b.Id);
+        if(b[this._bookMenuTitleColorObject] === undefined) b[this._bookMenuTitleColorObject] = 0;
+        else b[this._bookMenuTitleColorObject] = JSON.parse(b[this._bookMenuTitleColorObject]);
         var key = b.Title.replace(/[\s\t]+/g, '');
         var category = b.Category;
         var id = b.Id;
@@ -1916,6 +1938,10 @@ LibraryData.prototype.isBookReady = function(){
 
 LibraryData.prototype.getBookTitle = function(book){
     return this.getAttrValue(book, this._bookTitleObject);
+};
+
+LibraryData.prototype.getBookTitleColor = function(book){
+    return (this.getAttrValue(book, this._bookMenuTitleColorObject) !== undefined) ? this.getAttrValue(book, this._bookMenuTitleColorObject) : 0;
 };
 
 LibraryData.prototype.getBookText = function(book){
@@ -2330,7 +2356,7 @@ Window_BookList.prototype.initialize = function(ttlw, txtw) {
     var y = eval(TAA.bm.Parameters.MenuListWindow.Y) || 0;
 
     Window_Command.prototype.initialize.call(this, x, y);
-    
+    this.setStandardOpacity();    
     this.selectLast();
 };
 
@@ -2338,6 +2364,12 @@ Window_BookList._lastCommandSymbol = null;
 
 Window_BookList.initCommandPosition = function() {
     this._lastCommandSymbol = null;
+};
+
+Window_BookList.prototype.setStandardOpacity = function() {
+    var opacity = Math.round(eval(TAA.bm.Parameters.MenuListWindow['Standard Opacity']));
+    if(opacity === undefined) opacity = 255;
+    this.opacity = opacity;
 };
 
 Window_BookList.prototype.windowWidth = function(){
@@ -2553,9 +2585,10 @@ Window_BookList.prototype.processWheel = function() {
     if (TouchInput.wheelY <= -threshold) this.scrollUp();
 };
   
-Window_BookList.prototype.loadWindowSkin = function() {
-    var windowSkin = TAA.bm.Parameters.MenuListWindow['Window Skin'] || 'Window';
-    this.windowSkin = ImageManager.loadSystem(windowSkin);
+Window_BookList.prototype.loadWindowskin = function() {
+    var windowSkin = TAA.bm.Parameters.MenuListWindow['Window Skin'];
+    TAA.log(2, "Window Skin: " + windowSkin);
+    this._windowskin = ImageManager.loadSystem(windowSkin);
 };
 
 //=============================================================================
@@ -2590,9 +2623,10 @@ Window_BookTitle.prototype.setBook = function(bookKey) {
   
 Window_BookTitle.prototype.setStandardOpacity = function() {
     if(this._isBookScene)
-        var opacity = Math.round(eval(TAA.bm.Parameters.DetachedTitleWindow['Standard Opacity'])) || 255;
+        var opacity = Math.round(eval(TAA.bm.Parameters.DetachedTitleWindow['Standard Opacity']));
     else
-        var opacity = Math.round(eval(TAA.bm.Parameters.MenuTitleWindow['Standard Opacity'])) || 255;
+        var opacity = Math.round(eval(TAA.bm.Parameters.MenuTitleWindow['Standard Opacity']));
+    if(opacity === undefined) opacity = 255;
     this.opacity = opacity;
 };
 
@@ -2613,7 +2647,8 @@ Window_BookTitle.prototype.refresh = function() {
 
 Window_BookTitle.prototype.drawBookTitle = function(align){
     var wx = this.getAlignedX($dataBooks.getBookTitle(this._bookKey), align);
-    this.drawTextEx($dataBooks.getBookTitle(this._bookKey), wx, 0);
+    var title = "\\C[" + $dataBooks.getBookTitleColor(this._bookKey) + "]" + $dataBooks.getBookTitle(this._bookKey) + "\\C[0]";
+    this.drawTextEx(title, wx, 0);
 };
 
 Window_BookTitle.prototype.drawEmptyTitle = function(align){
@@ -2697,12 +2732,12 @@ Window_BookTitle.prototype.standardBackOpacity = function() {
     return this._windowBackOpacity;
 };
   
-Window_BookTitle.prototype.loadWindowSkin = function() {
+Window_BookTitle.prototype.loadWindowskin = function() {
     if(this._isBookScene)
-        var windowSkin = TAA.bm.Parameters.DetachedTitleWindow['Window Skin'] || 'Window';
+        var windowSkin = TAA.bm.Parameters.DetachedTitleWindow['Window Skin'];
     else
-        var windowSkin = TAA.bm.Parameters.MenuTitleWindow['Window Skin'] || 'Window';
-    this.windowSkin = ImageManager.loadSystem(windowSkin);
+        var windowSkin = TAA.bm.Parameters.MenuTitleWindow['Window Skin'];
+    this._windowskin = ImageManager.loadSystem(windowSkin);
 };
 
 
@@ -2732,6 +2767,7 @@ Window_BookText.prototype.initialize = function(x, y, width, height) {
     this._forceImgIntoWindow = TAA.bm.Parameters.Misc['Force Image Into Window'];
     if(this._forceImgIntoWindow === undefined) this._forceImgIntoWindow = true;
     Window_Selectable.prototype.initialize.call(this, x, y, width, height);
+    this.setStandardOpacity();
     this.refresh();
 };
 
@@ -2779,9 +2815,10 @@ Window_BookText.prototype.setBook = function(book, delay){
   
 Window_BookText.prototype.setStandardOpacity = function() {
     if(this._isBookScene)
-        var opacity = Math.round(eval(TAA.bm.Parameters.DetachedTextWindow['Standard Opacity'])) || 255;
+        var opacity = Math.round(eval(TAA.bm.Parameters.DetachedTextWindow['Standard Opacity']));
     else
-        var opacity = Math.round(eval(TAA.bm.Parameters.MenuTextWindow['Standard Opacity'])) || 255;
+        var opacity = Math.round(eval(TAA.bm.Parameters.MenuTextWindow['Standard Opacity']));
+    if(opacity === undefined) opacity = 255;
     this.opacity = opacity;
 };
 
@@ -3085,12 +3122,12 @@ Window_BookText.prototype.standardBackOpacity = function() {
     return this._windowBackOpacity;
 };
   
-Window_BookText.prototype.loadWindowSkin = function() {
+Window_BookText.prototype.loadWindowskin = function() {
     if(this._isBookScene)
-        var windowSkin = TAA.bm.Parameters.DetachedTextWindow['Window Skin'] || 'Window';
+        var windowSkin = TAA.bm.Parameters.DetachedTextWindow['Window Skin'];
     else
-        var windowSkin = TAA.bm.Parameters.MenuTextWindow['Window Skin'] || 'Window';
-    this.windowSkin = ImageManager.loadSystem(windowSkin);
+        var windowSkin = TAA.bm.Parameters.MenuTextWindow['Window Skin'];
+    this._windowskin = ImageManager.loadSystem(windowSkin);
 };
 
 Window_BookText.prototype.scrollSpeed = function() {
@@ -3350,16 +3387,6 @@ function Scene_BookMenu() {
 Scene_BookMenu.prototype = Object.create(Scene_MenuBase.prototype);
 Scene_BookMenu.prototype.constructor = Scene_BookMenu;
 
-Scene_BookMenu.prototype.createWindowLayer = function() {
-    var width = Graphics.boxWidth;
-    var height = Graphics.boxHeight;
-    var x = (Graphics.width - width) / 2;
-    var y = (Graphics.height - height) / 2;
-    this._windowLayer = new WindowLayer();
-    this._windowLayer.move(x, y, width, height);
-    this.addChild(this._windowLayer);
-};
-
 Scene_BookMenu.prototype.initialize = function() {
     Scene_MenuBase.prototype.initialize.call(this);
     this._previousBook = undefined;
@@ -3448,45 +3475,55 @@ Scene_BookMenu.prototype.createBackground = function(){
     if(op === undefined) op = 1;
     if(op & 1){
         Scene_MenuBase.prototype.createBackground.call(this);
+        this._bgStackSize++;
     }
     if(op & 2){
         this.createFullBackground();
+        this._bgStackSize++;
     }
 
     if(op % 4 === 0){
         if(op & 4){
             this.customBgSinglePlusList(customBg);
+            this._bgStackSize += 2;
         }
         if(op & 8){
             this.customBgSinglePlusTitle(customBg);
+            this._bgStackSize += 2;
         }
         if(op & 16){
             this.customBgSinglePlusText(customBg);
+            this._bgStackSize += 2;
         }
         if(op & 32){
             this.customBgMultiBgImages(customBg);
+            this._bgStackSize += 3;
         }
         if(op & 64){
             this.createSingleBgImage(customBg);
+            this._bgStackSize++;
             if(customBg !== undefined && customBg.mode & 8){
                 this.createTitleAndTextBackground(customBg.file);
+                this._bgStackSize += 2;
             }
             else if(customBg !== undefined && customBg.mode & 4){
                 this.createTextBackground(customBg.file);
+                this._bgStackSize++;
             }
         }
     }
     else{
         if(customBg !== undefined && customBg.mode & 8){
             this.createListAndTextBackground(customBg.file);
+            this._bgStackSize += 2;
         }
         else if(customBg !== undefined && customBg.mode & 4){
             this.createTextBackground(customBg.file);
+            this._bgStackSize++;
         }
     }
 
-    this._bgStackSize = this.getWindowLayerIndex()+1;
-    TAA.log(3, "Scene_BookMenu: Stack Size = " + this._bgStackSize);
+    TAA.log(2, "Scene_BookMenu: Stack Size = " + this._bgStackSize);
 };
 
 Scene_BookMenu.prototype.customBgSinglePlusList = function(customBg){
@@ -3657,7 +3694,7 @@ Scene_BookMenu.prototype.createTextBackground = function(imgFile, index){
     this._textBackground = new TilingSprite();
     this._textBackground.move(x, y, width, height);
     this._textBackground.bitmap = ImageManager.loadPicture(imgFile);
-    if(index) this.addChildAt(this._textBackground, index);
+    if(index !== undefined) this.addChildAt(this._textBackground, index);
     else this.addChild(this._textBackground);
 };
 
@@ -3683,7 +3720,7 @@ Scene_BookMenu.prototype.createTitleAndTextBackground = function(imgFile, index)
     this._titleTextBackground = new TilingSprite();
     this._titleTextBackground.move(x, y, width, height);
     this._titleTextBackground.bitmap = ImageManager.loadPicture(imgFile);
-    if(index) this.addChildAt(this._titleTextBackground, index);
+    if(index !== undefined) this.addChildAt(this._titleTextBackground, index);
     else this.addChild(this._titleTextBackground);
 };
 
@@ -3738,26 +3775,23 @@ Scene_BookMenu.prototype.getWindowLayerIndex = function(){
 Scene_BookMenu.prototype.updateChildren = function(){
     var customBg = $dataBooks.customBgByKey(this._textWindow._bookKey);
     var index = this.getWindowLayerIndex();
+    //TAA.log(2, "WindowLayer index: " + index);
     if(this._previousBook !== this._textWindow._bookKey){
         this._previousBook = this._textWindow._bookKey;
         this._waitCounter = true;
     }
     else{
         if(this._waitCounter && this._textWindow._freezeFrames <= 0){
-            TAA.log(3, "Scene_BookMenu: customBg:");
-            TAA.log(3, customBg);
-            TAA.log(3, "Scene_BookMenu: Children:");
-            TAA.log(3, this.children);
+            TAA.log(2, "Scene_BookMenu: customBg:");
+            TAA.log(2, customBg);
+            TAA.log(2, "Scene_BookMenu: Children:");
+            TAA.log(2, this.children);
+            this.removeCustomBg(index);
             if(customBg !== undefined && customBg.mode & 8){
-                this.removeCustomBg(index);
-                this.createTitleAndTextBackground(customBg.file, index);
+                this.createTitleAndTextBackground(customBg.file, this._bgStackSize);
             }
             else if(customBg !== undefined && customBg.mode & 4){
-                this.removeCustomBg(index);
-                this.createTextBackground(customBg.file, index);
-            }
-            else{
-                this.removeCustomBg(index);
+                this.createTextBackground(customBg.file, this._bgStackSize);
             }
             this._waitCounter = false;
         }
@@ -3767,14 +3801,12 @@ Scene_BookMenu.prototype.updateChildren = function(){
 };
 
 Scene_BookMenu.prototype.removeCustomBg = function(index){
-    TAA.log(3, "Scene_BookMenu: removeCustomBg call for index " + index);
-    TAA.log(3, "Scene_BookMenu: Children:")
-    TAA.log(3, this.children);
-    TAA.log(3, "Scene_BookMenu: Child on index " + index);
-    TAA.log(3, this.children[1]);
-    TAA.log(3, "Scene_BookMenu: Child object type: " + this.children[index]);
-    TAA.log(3, this._windowLayer);
-    TAA.log(3, "Scene_BookMenu: _bgStackSize: " + this._bgStackSize);
+    TAA.log(2, "Scene_BookMenu: removeCustomBg call for index " + index);
+    TAA.log(2, "Scene_BookMenu: Children:")
+    TAA.log(2, this.children);
+    TAA.log(2, "Scene_BookMenu: Child on index " + index);
+    TAA.log(2, this.children[index]);
+    TAA.log(2, "Scene_BookMenu: _bgStackSize: " + this._bgStackSize);
 
     while(index > this._bgStackSize){
         this.children.splice(--index, 1);
@@ -3811,7 +3843,7 @@ TouchInput._onMouseMove = function(event){
 
 // Trace can be a number between 0 and 4
 // The higher the number, the more verbose is the plugin
-TAA.bm.trace = 0;
+TAA.bm.trace = 2;
 if(TAA.log === undefined){
     TAA.log = function(trace, msg){
         trace = trace | 0;
