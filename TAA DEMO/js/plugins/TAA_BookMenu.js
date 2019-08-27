@@ -467,6 +467,7 @@ TAA.bm.alias = {};
  *      "books": {
  *          "title1": {
  *              "title": "Book Title",
+ *              "titleColor": 0,
  *              "text": "Book's content.",
  *              "category": 0,
  *              "id": 0,
@@ -495,6 +496,7 @@ TAA.bm.alias = {};
  * they're placed).
  *   - Each book must have an unique key tag. This tag will be used by most of
  * the plugin available commands.
+ *   - The titleColor tag can be omitted if no custom color is needed.
  * 
  * 
  * Localization Escape Code
@@ -529,6 +531,13 @@ TAA.bm.alias = {};
  * 
  * Default:
  *   title
+ * 
+ * 
+ * Title Color Object
+ *  - Use this parameter to customize the title color independently the list window.
+ * 
+ * Default:
+ *   titleColor
  * 
  * 
  * Text Object
