@@ -773,6 +773,8 @@ TAA.bm.alias = {};
  * When in book menu, it will appear with default color in the list section while
  * using the custom color in the title section. Use escape codes if you the same
  * color on both sections.
+ * - Included a small fix so that the first item on the list is automatically 
+ * selected when the Book Menu is loaded.
  *
  * ============================================================================
  * End of Help
@@ -2474,6 +2476,7 @@ Window_BookList.prototype.currentExt = function(){
 
 Window_BookList.prototype.makeCommandList = function() {
     this.addBookList();
+    this.initCursor();
 };
 
 Window_BookList.prototype.addBookList = function(){
@@ -2523,6 +2526,13 @@ Window_BookList.prototype.addBookList = function(){
     }
     
     TAA.log(4, "Window_BookList: addBookList loop end");
+};
+
+Window_BookList.prototype.initCursor = function() {
+    if(Window_BookList._lastCommandSymbol === undefined && this._list.length > 0){
+        Window_BookList._lastCommandSymbol = this._list[0];
+        this.selectSymbol(Window_BookList._lastCommandSymbol);
+    }
 };
 
 Window_BookList.prototype.prepareCategoryText = function(category, closed, count){
@@ -3852,7 +3862,7 @@ TouchInput._onMouseMove = function(event){
 
 // Trace can be a number between 0 and 4
 // The higher the number, the more verbose is the plugin
-TAA.bm.trace = 2;
+TAA.bm.trace = 0;
 if(TAA.log === undefined){
     TAA.log = function(trace, msg){
         trace = trace | 0;
