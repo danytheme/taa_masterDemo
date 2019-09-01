@@ -13,6 +13,7 @@ TAA.bm.alias = {};
  *
  * @plugindesc [1.3.3] Create a Book Menu
  * @author T. A. A. (taaspider)
+ * @url https://www.patreon.com/taaspider
  * 
  * @help
  * =============================================================================
@@ -399,6 +400,14 @@ TAA.bm.alias = {};
  * see the book load without the image, just to see the screen automatically
  * update a few seconds later including it.
  * 
+ * WARNING: If you're using a plugin to provide wordwrapping functions, you'll
+ * need to manually include the wordwrap tag before any text that follows an
+ * inline image. It is required because to include such images this plugin
+ * needs to break down the book text in sections, and the wordwrap tag included
+ * in the "Book Text Format" parameter or at the start of the first block of
+ * text won't have effect on any text following the image.
+ * Ex.: <WordWrap>Before an inline image.%img("Sword")<WordWrap>After any image.
+ * 
  * =============================================================================
  * Misc Parameters
  * =============================================================================
@@ -775,6 +784,7 @@ TAA.bm.alias = {};
  * color on both sections.
  * - Included a small fix so that the first item on the list is automatically 
  * selected when the Book Menu is loaded.
+ * - Fixed an issue when using inline images along with wordwrap
  *
  * ============================================================================
  * End of Help
@@ -2889,7 +2899,6 @@ Window_BookText.prototype.createContents = function() {
                 if(obj.content.isReady()){
                     position = position || this.getImagePosition(obj.content);
                     position.y = currentY;
-
                     if(position.dh === undefined){
                         position.dh = position.h;
                         position.dw = position.w;
@@ -2920,6 +2929,7 @@ Window_BookText.prototype.drawPrintableObjects = function(){
         switch(obj.type){
             case "text":
                 TAA.log(4, "Window_BookText: Drawing text object...");
+                obj.y = this.fixObjectHeight(obj.y);
                 this.drawBookTextEx(obj.content, 0, obj.y);
                 obj.printed = true;
                 break;
@@ -2927,6 +2937,7 @@ Window_BookText.prototype.drawPrintableObjects = function(){
             case "image":
                 if(obj.content.isReady()) {
                     TAA.log(4, "Window_BookText: Drawing image...");
+                    obj.position.y = this.fixObjectHeight(obj.position.y);
                     this._allTextHeight += obj.position.dh;
                     this.drawPicture(obj.content, obj.position);
                     obj.printed = true;
@@ -2937,6 +2948,13 @@ Window_BookText.prototype.drawPrintableObjects = function(){
         }
     }
     TAA.log(4, "Window_BookText: drawPrintableObjects end.");
+};
+
+Window_BookText.prototype.fixObjectHeight = function(currentY){
+    if(currentY / this._allTextHeight < 0.9)
+        return this._allTextHeight;
+    else
+        return currentY;
 };
 
 Window_BookText.prototype.prepareBookText = function(bookKey){
