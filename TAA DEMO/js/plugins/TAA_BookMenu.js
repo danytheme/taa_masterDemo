@@ -1246,7 +1246,7 @@ TAA.bm.alias = {};
  * @option center
  * @option right
  * @default left
- * @desc How shoudl we align category names in the Menu List Window? (default: left)
+ * @desc How should we align category names in the Menu List Window? (default: left)
  * 
  * @param Closed Category Symbol
  * @type text
@@ -1261,7 +1261,7 @@ TAA.bm.alias = {};
  * @param Category Text Format
  * @type text
  * @default %1 %2 (%3)
- * @desc Format to display quest types. Text codes supported:
+ * @desc Format to display book categories. Text codes supported:
  * %1 - Open/Closed  %2 - Category Name  %3 - Number of books within
  * 
  * @param Book Alignment
@@ -1270,7 +1270,7 @@ TAA.bm.alias = {};
  * @option center
  * @option right
  * @default left
- * @desc How shoudl we align book names in the Menu List Window? (default: left)
+ * @desc How should we align book names in the Menu List Window? (default: left)
  * 
  * @param Book Indent
  * @type number
@@ -1639,19 +1639,19 @@ TAA.bm.alias = {};
  * @type file
  * @dir img/pictures/
  * @default
- * @desc Select and image to display only at the detached text window.
+ * @desc Select and image to display on both text and title window.
  * 
  * @param Single Image - Title / List
  * @type file
  * @dir img/pictures/
  * @default
- * @desc Select and image to display only at the detached text window.
+ * @desc Select and image to display on both title and list window.
  * 
  * @param Single Image - Text / List
  * @type file
  * @dir img/pictures/
  * @default
- * @desc Select and image to display only at the detached text window.
+ * @desc Select and image to display on both text and list window.
  * 
  */
 
