@@ -4,7 +4,8 @@
             "Tutorial",
             "Parameters",
             "Commands",
-            "Lorem Ipsum"
+            "Lorem Ipsum",
+            "Changelog"
         ],
         "books": {
             "Introduction": {
@@ -37,6 +38,11 @@
             "InlineImages": {
                 "title": "Inline Images",
                 "text": "The escape code % img(\"filename\") (no espace \nbetween % and img) can be used to include an \nimage along with the book text in its original \nsize (or resized to fit into window, see next \nsection). The plugin will always look for images\nin PNG format in the pictures folder.\n\nEx.: % img(\"Sword\")\n%img(\"Sword\")\nYou can also include optional parameters to \nforce the plugin to resize the image to your \nliking: % img(\"filename\", width, height) \n(again, no space between % and img). The code \nparameters width and height are percentile \nnumbers. For instance, if you want the image to \nbe displayed in half its original size use \n% img(\"filename\", 50, 50).\nEx.: % img(\"Sword\", 50, 50)\n%img(\"Sword\", 50, 50)\n\nEx.: % img(\"Sword\", 40, 20)\n%img(\"Sword\", 40, 20)\nOne additional note: images are loaded into \nmemory asynchronously. Which means the plugin \nwon't wait for it to be ready to show the book's \ntext. If, however, the image finishes loading \nand the screen is already showing your book's \ntext it will be automatically updated. In other \nwords, slower machines may see the book load \nwithout the image, just to see the screen \nautomatically update a few seconds later \nincluding it.\n\n\nWARNING: If you're using a plugin to provide \nwordwrapping functions, you'll need to manually \ninclude the wordwrap tag before any text that \nfollows an inline image. It is required because \nto include such images this plugin needs to \nbreak down the book text in sections, and the \nwordwrap tag included in the \"Book Text Format\" \nparameter or at the start of the first block of\ntext won't have effect on any text following the \nimage.\nEx.: < WordWrap>Before an inline image.\n% img(\"Sword\")< WordWrap>After any image.",
+                "category": 0
+            },
+            "InlineTrailingImages": {
+                "title": "Inline Trailing Images",
+                "text": "%in_img(\"alphabet-2010703_960_720\", 10, 10)ou can insert small images at the start of \nparagraphs using the escape code \n% in_img(\"filename\") (no space between % and \nin_img). The same resizing parameters as % img \ncan be used here: % in_img(\"filename\", 50, 50).\nThe image will always be aligned to the left \nof the screen, and any following text will be \ndisplayed right next to it (at the same height \nas the bottom of the image).",
                 "category": 0
             },
             "DetachedTitle": {
@@ -145,6 +151,52 @@
                 "title": "Sample",
                 "text": "Lorem ipsum dolor sit amet, consectetur \nadipiscing elit. Duis vitae justo tincidunt, \nvenenatis nisi et, sollicitudin neque. Morbi \nnec tortor lacus. Etiam ornare, nunc nec \nfringilla tempus, est nunc congue est, ut \nmaximus ipsum nibh interdum ex. Nunc hendrerit \nnibh eget nibh suscipit lacinia. Nullam iaculis \nmauris tortor, sit amet semper turpis consequat \nnon. Nam id suscipit lacus. Donec tempus \niaculis placerat.\n\nEtiam interdum facilisis est id aliquam. \nPhasellus at quam ornare, ornare metus sit \namet, euismod turpis. Quisque condimentum sem \nquis pellentesque aliquam. Proin auctor \nhendrerit iaculis. Phasellus vitae magna \ncongue, aliquet turpis a, faucibus diam. Proin \npharetra ultricies gravida. Ut fringilla, ipsum \nut pretium porttitor, leo est congue lectus, \nvitae finibus elit neque non massa. Vivamus \nfaucibus, orci eu viverra mattis, dui velit \nvulputate nisl, quis consequat dolor odio ut \norci. Curabitur erat dolor, posuere sed luctus \nvitae, dapibus ac orci. Vestibulum quis \nmalesuada est. Maecenas semper posuere \nconsequat. Maecenas euismod accumsan ultricies. \nNullam turpis erat, scelerisque vel dapibus in, \ngravida sit amet ipsum. Donec varius neque ac \nnunc fermentum ultricies. Ut quis gravida elit.\n\nCras imperdiet mi sit amet ligula pellentesque \ncommodo. Aliquam sagittis, diam ac maximus \naliquam, ligula massa tristique quam, vitae \ncondimentum felis purus sed lacus. Vivamus \niaculis, ex quis bibendum volutpat, turpis \nnulla facilisis libero, sed posuere massa \nmauris at massa. Praesent molestie pulvinar \ndolor quis tristique. Sed faucibus odio euismod \nest pellentesque scelerisque. Etiam bibendum, \nerat non ultricies vestibulum, dolor turpis \nconsectetur dolor, eu pulvinar felis ipsum at \ndui. Mauris id semper justo, eu semper nisi. In \nimperdiet non libero in posuere. Nam pulvinar \nsagittis orci a condimentum. Phasellus \nhendrerit, dui a interdum dignissim, ante purus \nmolestie erat, at tincidunt metus elit et mi. \nCurabitur eget turpis tortor. Fusce sed viverra \nelit, nec porttitor dui. Etiam facilisis \ntincidunt erat a aliquam. Ut vel consequat \nvelit, sed pulvinar turpis. Morbi at semper \npurus. Maecenas ac neque sem.",
                 "category": 3
+            },
+            "Version1.0.0": {
+                "title": "Version 1.0.0",
+                "text": " - First Release!",
+                "category": 4
+            },
+            "Version1.0.1": {
+                "title": "Version 1.0.1",
+                "text": " - Fixed mouse wheel scrolling by including a\ncustomization to TouchInput._onMouseMove.",
+                "category": 4
+            },
+            "Version1.1.0": {
+                "title": "Version 1.1.0",
+                "text": " - Reorganized all aliases inside an object, to\nmake them easier to track down\n - Included the possibility to customize scene\nbackgrounds with images. The Detached Scene and\nMenu Scene have different configurations, so that\nthey can have different backgrounds if the dev\nwishes",
+                "category": 4
+            },
+            "Version1.2.0": {
+                "title": "Version 1.2.0",
+                "text": " - Included a new feature allowing books to have\ncustom background images that override the \ndefault ones. It comes with options to use the\ncustom images on the detached scene only, menu\nscene only, or both. The image can also be set\nto cover only the text window or title + text \nwindows",
+                "category": 4
+            },
+            "Version1.3.0": {
+                "title": "Version 1.3.0",
+                "text": " - Fixed a bug caused by the custom background\nchange of the previous version that could cause\nthe game to crash when opening a book with no\ncustom background.\n - Reworked the Window_BookText prototype to\nallow inline images to be included along with a\nbook text.",
+                "category": 4
+            },
+            "Version1.3.1": {
+                "title": "Version 1.3.1",
+                "text": " - Added a custom log function to help me debug\nfuture issues.\n - Fixed compatibility with \nOlivia_StateTooltipDisplay",
+                "category": 4
+            },
+            "Version1.3.2": {
+                "title": "Version 1.3.2",
+                "text": " - Fixed compatibility with MOG_MenuCursos (and\nprobably with most plugins that creates a new \nlayer over the scene as long as it stays over the\nWindowLayer)",
+                "category": 4
+            },
+            "Version1.3.3": {
+                "title": "Version 1.3.3",
+                "titleColor": 1,
+                "text": " - Fixed bug that caused odd window behavior when\ntwo or more books in a row had custom backgrounds\n - Option added to set a custom color for book \ntitles only in the title section. When in the\nbook menu, it will appear with default color in \nthe list section while using the custom color in\nthe title section. Use escape codes if you wish\nto use the same color on both sections\n - Included a small fix so that the first item on\nthe list is automatically selected when the Book \nMenu is loaded\n - Fixed an issue when using inline images along\nwith wordwrap",
+                "category": 4
+            },
+            "Version1.3.4": {
+                "title": "Version 1.3.4",
+                "text": "%in_img(\"alphabet-2010751_960_720\", 10, 10)dded new feature to allow trailing \ninline images into book texts\n%in_img(\"alphabet-2010746_960_720\", 10, 10)ixed bug with test padding not being \napplied to book text%in_img(\"alphabet-2010746_960_720\", 10, 10)ixed an issue when using RS_MessageAlign \nthat caused the first line to not be aligned\ncorrectly",
+                "category": 4
             }
         }
     }

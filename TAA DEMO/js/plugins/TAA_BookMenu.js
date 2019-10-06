@@ -5,17 +5,31 @@
 
 var TAA = TAA || {};
 TAA.bm = {};
-TAA.bm.Version = "1.3.3";
+TAA.bm.Version = "1.3.4";
 TAA.bm.PluginName = "TAA_BookMenu";
 TAA.bm.alias = {};
 
 /*:
  *
- * @plugindesc [1.3.3] Create a Book Menu
+ * @plugindesc [1.3.4] Create a Book Menu
  * @author T. A. A. (taaspider)
  * @url https://www.patreon.com/taaspider
  * 
  * @help
+ * =============================================================================
+ * Terms of Use
+ * =============================================================================
+ * 
+ * This plugin was developed by taaspider and is free for both commercial and
+ * noncommercial use. You're free to edit any part of it, as long as I'm
+ * credited for the original version. Also, let me know when you publish your
+ * game so I can check it out!
+ * 
+ * If you like and want to support me, check out my facebook page and become
+ * my patron on Patreon:
+ *  Facebook: https://www.facebook.com/taaspider 
+ *  Patreon: https://www.patreon.com/taaspider
+ *  
  * =============================================================================
  * Introduction
  * =============================================================================
@@ -373,7 +387,7 @@ TAA.bm.alias = {};
  * Inline Images
  * =============================================================================
  *  
- * The escape code % img("filename") (no espace between % and img) can be used
+ * The escape code % img("filename") (no space between % and img) can be used
  * to include an image along with the book text in its original size (or resized
  * to fit into window, see next section). The plugin will always look for images
  * in PNG format in the pictures folder.
@@ -399,6 +413,19 @@ TAA.bm.alias = {};
  * it will be automatically updated. In other words, slower machines may
  * see the book load without the image, just to see the screen automatically
  * update a few seconds later including it.
+ * 
+ * -----------------------------------------------------------------------------
+ * Inline Trailing Images
+ * -----------------------------------------------------------------------------
+ * 
+ * You can insert small images at the start of paragraphs using the escape code
+ * % in_img("filename") (no space between % and in_img). The same resizing
+ * parameters as % img can be used here: % in_img("filename", 50, 50).
+ * The image will always be aligned to the left of the screen, and any following
+ * text will be displayed right next to it (at the same height as the bottom
+ * of the image).
+ * 
+ * -----------------------------------------------------------------------------
  * 
  * WARNING: If you're using a plugin to provide wordwrapping functions, you'll
  * need to manually include the wordwrap tag before any text that follows an
@@ -780,11 +807,16 @@ TAA.bm.alias = {};
  * - Fixed bugs that interfered with windowskin and window opacity parameters
  * - Option added to set a custom color for book titles only in the title section.
  * When in book menu, it will appear with default color in the list section while
- * using the custom color in the title section. Use escape codes if you the same
- * color on both sections.
+ * using the custom color in the title section. Use escape codes if you wish to use
+ * the same color on both sections.
  * - Included a small fix so that the first item on the list is automatically 
  * selected when the Book Menu is loaded.
  * - Fixed an issue when using inline images along with wordwrap
+ * Version 1.3.4:
+ * - Added new feature to allow trailing inline images into book texts
+ * - Fixed bug with text padding not being applied to book text
+ * - Fixed an issue when using RS_MessageAlign that caused the first line to
+ * not be aligned correctly
  *
  * ============================================================================
  * End of Help
@@ -2881,23 +2913,35 @@ Window_BookText.prototype.createContents = function() {
     var currentY = 0;
     for(var i=0; i< this._printableObjects.length; i++){
         var obj = this._printableObjects[i];
-        var position;
+        var position = undefined;
         switch(obj.type){
             case "text":
                 obj.y = currentY;
+                if(i > 0 && this._printableObjects[i-1].type === 'inline_image'){
+                    var fixAlign = this.alignTextToInlineImage(this._printableObjects[i-1]);
+                    if(fixAlign !== undefined && fixAlign < this.width){
+                        obj.content = fixAlign + obj.content;
+                        obj.fixY = obj.y - Math.round(this.lineHeight() * 8/10);
+                        currentY = obj.fixY;
+                    }                    
+                }
                 if(i < this._printableObjects.length && this._breakBeforeImage) 
                     obj.content += '\n';
                 obj.textState = this.setupTextState(obj.content);
                 this._allTextHeight += this.calcTextHeight(obj.textState, true) * 10;
                 currentY += this.calcTextHeight(obj.textState, true);
                 break;
+            case "inline_image":
+                if(obj.content.isReady()){
+                    position = this.getImagePosition(obj.content, obj.dw, obj.dh, 'left');
+                }
             case "resized_image":
                 if(obj.content.isReady()){
-                    position = this.getImagePosition(obj.content, obj.dw, obj.dh);
+                    position = position || this.getImagePosition(obj.content, obj.dw, obj.dh, 'center');
                 }
             case "image":
                 if(obj.content.isReady()){
-                    position = position || this.getImagePosition(obj.content);
+                    position = position || this.getImagePosition(obj.content, undefined, undefined, 'center');
                     position.y = currentY;
                     if(position.dh === undefined){
                         position.dh = position.h;
@@ -2919,6 +2963,16 @@ Window_BookText.prototype.createContents = function() {
     TAA.log(4, "Window_BookText: createContents end");
 };
 
+Window_BookText.prototype.alignTextToInlineImage = function(imgObj){
+    var align = "";
+    if(imgObj.position && imgObj.position.dw && ((imgObj.printed && imgObj.printed === true) || imgObj.printed === undefined)){
+        do{
+            align += " ";
+        } while(this.drawTextEx(align, 0, 0) < imgObj.position.dw);    
+    }
+    return align;
+};
+
 Window_BookText.prototype.drawPrintableObjects = function(){
     TAA.log(4, "Window_BookText: starting drawPrintableObjects");
     this.createContents();
@@ -2930,14 +2984,17 @@ Window_BookText.prototype.drawPrintableObjects = function(){
             case "text":
                 TAA.log(4, "Window_BookText: Drawing text object...");
                 obj.y = this.fixObjectHeight(obj.y);
-                this.drawBookTextEx(obj.content, 0, obj.y);
+                if(obj.fixY && obj.fixY > 0)
+                    obj.y = obj.fixY;
+                this.drawBookTextEx(obj.content, this.textPadding(), obj.y);
                 obj.printed = true;
                 break;
+            case "inline_image":
             case "resized_image":
             case "image":
                 if(obj.content.isReady()) {
                     TAA.log(4, "Window_BookText: Drawing image...");
-                    obj.position.y = this.fixObjectHeight(obj.position.y);
+                    // obj.position.y = this.fixObjectHeight(obj.position.y);
                     this._allTextHeight += obj.position.dh;
                     this.drawPicture(obj.content, obj.position);
                     obj.printed = true;
@@ -2967,7 +3024,7 @@ Window_BookText.prototype.prepareBookText = function(bookKey){
 
 Window_BookText.prototype.preparePrintableObjects = function(text){
     this._printableObjects = [];
-    var splitArray = text.split(/(\%img\(\s*["'][^"']+["']\s*(?:,\s*[0-9\.]+\s*,\s*[0-9\.]+)?\s*\))/gm);
+    var splitArray = text.split(/(\%(?:in_)?img\(\s*["'][^"']+["']\s*(?:,\s*[0-9\.]+\s*,\s*[0-9\.]+)?\s*\))/gm);
     
     for(var i=0; i < splitArray.length; i++){
         var object = {};
@@ -2983,6 +3040,19 @@ Window_BookText.prototype.preparePrintableObjects = function(text){
             }
             else{
                 object.type = "image";
+            }
+            this._printableObjects.push(object);
+            this.loadPicture(fileName, object);
+        }
+        else if(splitArray[i].match(/\%in_img\(\s*["']([^"']+)["']\s*(?:,\s*([0-9\.]+)\s*,\s*([0-9\.]+))?\s*\)/gm)){
+            // If we get a match, this is an inline image tag.
+            // For now, only left margin inline images are supported. Text
+            // will follow the bottom of the image
+            var fileName = RegExp.$1;
+            object.type = "inline_image";
+            if(RegExp.$2 && RegExp.$3){
+                object.dw = parseFloat(RegExp.$2);
+                object.dh = parseFloat(RegExp.$3);
             }
             this._printableObjects.push(object);
             this.loadPicture(fileName, object);
@@ -3004,23 +3074,23 @@ Window_BookText.prototype.drawEmptyBook = function(){
     this.drawBookTextEx(textState.originalText, 0, 0);
 };
 
-Window_BookText.prototype.getImagePosition = function(bitmap, dw, dh){
+Window_BookText.prototype.getImagePosition = function(bitmap, dw, dh, align){
     var position = {};
     position.x = 0;
     position.w = bitmap.width;
     position.h = bitmap.height;
     var width = bitmap.width;
     var height = bitmap.height;
-    if(dw && dw > 0){
+    if(dw !== undefined && dw > 0){
         width = Math.round(width * (dw/100));
         position.dw = width;
     }
-    if(dh && dh > 0){
+    if(dh !== undefined && dh > 0){
         height = Math.round(height * (dh/100));
         position.dh = height;
     }
     if(width <= this.width){
-        position.x = Math.round((this.width - width)/2);
+        if(align === 'center') position.x = Math.round((this.width - width)/2);
     }
     else if(this._forceImgIntoWindow){
         position.x = 0;
@@ -3062,6 +3132,7 @@ Window_BookText.prototype.isObjectPrintNeeded = function(index){
 };
 
 Window_BookText.prototype.drawBookTextEx = function(text, x, y){
+    // return this.drawTextEx(text, x, y);
     TAA.log(4, "Window_BookText: Starting drawBookTextEx...");
     if(text){
         var textState = { 
@@ -3072,12 +3143,14 @@ Window_BookText.prototype.drawBookTextEx = function(text, x, y){
         textState.text = this.convertEscapeCharacters(text);
         textState.height = this.calcTextHeight(textState, false);
         this.resetFontSettings();
+        if(Imported !== undefined && Imported.RS_MessageAlign === true){
+            this.doFirstLineAlign(textState);
+        }
         TAA.log(4, "Window_BookText: drawBookTextEx character processing loop...");
         while (textState.index < textState.text.length) {
             this.processCharacter(textState);
         }
         TAA.log(4, "Window_BookText: Updating TextHeight...");
-        var tmp = textState.y - y + this.lineHeight();
         this._allTextHeight += textState.y - y + this.lineHeight();
         return textState.x - x;
     } else {
