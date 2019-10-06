@@ -1,0 +1,10 @@
+Images
+------
+ - alphabet-2010703_960_720.png
+ - alphabet-2010751_960_720.png
+ - alphabet-2010746_960_720.png
+Free images downloaded from https://pixabay.com/ on October 5th, 2019
+
+Special Thanks
+--------------
+I'd like to thank my first patron, Pie4aPie, for giving the idea for inline trailing images for TAA_BookMenu. It adds a nice touch to it, I'm glad you brought this up! ;)
