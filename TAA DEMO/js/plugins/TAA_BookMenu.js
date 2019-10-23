@@ -8,6 +8,7 @@ TAA.bm = {};
 TAA.bm.Version = "1.3.4";
 TAA.bm.PluginName = "TAA_BookMenu";
 TAA.bm.alias = {};
+var Imported = Imported || {};
 
 /*:
  *
