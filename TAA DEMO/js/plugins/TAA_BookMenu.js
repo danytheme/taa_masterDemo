@@ -5,13 +5,14 @@
 
 var TAA = TAA || {};
 TAA.bm = {};
-TAA.bm.Version = "1.3.4";
+TAA.bm.Version = "1.3.5";
 TAA.bm.PluginName = "TAA_BookMenu";
 TAA.bm.alias = {};
+var Imported = Imported || {};
 
 /*:
  *
- * @plugindesc [1.3.4] Create a Book Menu
+ * @plugindesc [1.3.5] Create a Book Menu
  * @author T. A. A. (taaspider)
  * @url https://www.patreon.com/taaspider
  * 
@@ -21,12 +22,14 @@ TAA.bm.alias = {};
  * =============================================================================
  * 
  * This plugin was developed by taaspider and is free for both commercial and
- * noncommercial use. You're free to edit any part of it, as long as I'm
- * credited for the original version. Also, let me know when you publish your
+ * noncommercial use. You're free to edit to suit your game's needs, as long as I'm
+ * credited for the original version. You're not allowed to reuse and sell
+ * part or the whole of this plugin without prior written consent from the author.
+ * Also, let me know when you publish your
  * game so I can check it out!
  * 
  * If you like and want to support me, check out my facebook page and become
- * my patron on Patreon:
+ * my patron:
  *  Facebook: https://www.facebook.com/taaspider 
  *  Patreon: https://www.patreon.com/taaspider
  *  
@@ -454,6 +457,20 @@ TAA.bm.alias = {};
  * window width will be resized to fit (using the same proportion for height).
  * If false, the image will be loaded into the window as is.
  * 
+ * Reset Book List On Load
+ *  - This tells the plugin if, when loading a save file, it should use the
+ * book list loaded and saved on it or reload the library from your datasource.
+ * If set to "RESET", books read are still remembered, but the whole book list
+ * is updated. Be careful when using this option to not remove, rename or change
+ * category order, or change book categories, as that may break your save files.
+ * This should be used carefully to add new data to saved games, not change it.
+ * 
+ * Reset Books Read On Load
+ *  - This can be used to force books previously read to be forgotten when a
+ * saved game is loaded. If set to "REMEMBER", the books read by the player will
+ * be reloaded as they were when the game was saved. If set to "RESET", all books
+ * will be forgotten on game load.
+ * 
  * =============================================================================
  * Instructions - DataSources
  * =============================================================================
@@ -714,6 +731,19 @@ TAA.bm.alias = {};
  *  $gameSystem.isBookRead("bookJsonTag");
  *  $gameSystem.isBookRead("PluginManagerTitle");
  * 
+ * $gameSystem.resetLibrary()
+ *  - Reload the whole book list and books read. It might be useful when testing
+ * your game.
+ * 
+ * $gameSystem.resetLibraryBookList()
+ *  - Reload all book data from your datasource, but keeps the list of books read.
+ * This should be used carefully, as changing category/books names, order, or ids,
+ * can be game breaking. It maybe useful for testing, but I recommend caution if
+ * it is to be used on your released game.
+ * 
+ * $gameSystem.resetLibraryBooksRead()
+ *  - Reload the list of books read, making the player forget all books read.
+ * 
  * ============================================================================
  * Plugin Commands
  * ============================================================================
@@ -769,6 +799,19 @@ TAA.bm.alias = {};
  * LibraryData TitleBar show
  *  - Use this to hide / show the title bar on the detached book 
  * window.
+ * 
+ * LibraryData Reset All
+ *  - Reload the whole book list and books read. It might be useful when testing
+ * your game.
+ * 
+ * Library Reset BookList
+ *  - Reload all book data from your datasource, but keeps the list of books read.
+ * This should be used carefully, as changing category/books names, order, or ids,
+ * can be game breaking. It maybe useful for testing, but I recommend caution if
+ * it is to be used on your released game.
+ * 
+ * Library Reset BooksRead
+ *  - Reload the list of books read, making the player forget all books read. 
  *
  * ============================================================================
  * Changelog
@@ -817,6 +860,16 @@ TAA.bm.alias = {};
  * - Fixed bug with text padding not being applied to book text
  * - Fixed an issue when using RS_MessageAlign that caused the first line to
  * not be aligned correctly
+ * Version 1.3.5:
+ * - Included parameters that an be used to reset or keep book list on game
+ * load. If set to reset, New books created into the selected datasource will 
+ * be loaded into the game, otherwise it will keep the list of books previously
+ * loaded by that save. Similarly, there's another new parameter that allows 
+ * you to reset or remember books read on game load. Which means you can set 
+ * the plugin to make it so all books listed on the book menu are forgotten, 
+ * or remembered on game load;
+ * - Added script calls and plugin commands to reset the whole library, only
+ * the book list, and only books read (forget all books found);
  *
  * ============================================================================
  * End of Help
@@ -1012,6 +1065,22 @@ TAA.bm.alias = {};
  * @off NO
  * @desc If image is bigger than the text window, shrink it to fit?
  * @default true
+ * 
+ * @param Reset Book List On Load
+ * @parent ---Misc---
+ * @type boolean
+ * @on RESET
+ * @off KEEP
+ * @desc When loading a game, keep previous books loaded or reload them?
+ * @default false
+ * 
+ * @param Reset Books Read On Load
+ * @parent ---Misc---
+ * @type boolean
+ * @on RESET
+ * @off REMEMBER
+ * @desc When loading a game, remember books read or reset the list?
+ * @default false
  * 
  */
 
@@ -1789,6 +1858,8 @@ TAA.bm.Parameters.MenuBgImages.Option = eval(Parameters['Menu Background Options
 TAA.bm.Parameters.Misc = TAA.bm.Parameters.Misc || {};
 TAA.bm.Parameters.Misc['Break Before Image'] = JSON.parse(Parameters['Break Before Image']);
 TAA.bm.Parameters.Misc['Force Image Into Window'] = JSON.parse(Parameters['Force Image Into Window']);
+TAA.bm.Parameters.Misc.ResetBookListOnLoad = JSON.parse(Parameters['Reset Book List On Load']);
+TAA.bm.Parameters.Misc.ResetBooksReadOnLoad = JSON.parse(Parameters['Reset Books Read On Load']);
 
 //=============================================================================
 // DataManager
@@ -1811,7 +1882,19 @@ DataManager.makeSaveContents = function(){
 TAA.bm.alias.DataManager.extractSaveContents = DataManager.extractSaveContents;
 DataManager.extractSaveContents = function(contents){
     TAA.bm.alias.DataManager.extractSaveContents.call(this, contents);
-    $dataBooks = contents.dataBooks;
+    var loadedBooks = contents.dataBooks;
+    var booksRead = loadedBooks._booksRead;
+    $dataBooks = {};
+    
+    if(!TAA.bm.Parameters.Misc.ResetBookListOnLoad)
+        $dataBooks = loadedBooks;
+    else
+        $dataBooks = new LibraryData();
+    
+    if(TAA.bm.Parameters.Misc.ResetBooksReadOnLoad)
+        $dataBooks.resetBooksRead();
+    else
+        $dataBooks._booksRead = booksRead;
 };
 
 //=============================================================================
@@ -1832,6 +1915,10 @@ LibraryData.prototype.initialize = function(){
     this._categoryByBookKey = {};
     this._booksRead = this._booksRead || {};
     this._currentBook = undefined;
+    this.loadBookData();
+};
+
+LibraryData.prototype.loadBookData = function(){
     if(this._source === 'JSON File')
         this.loadBooksFromFile();
     else
@@ -1848,6 +1935,9 @@ LibraryData.prototype.loadBooksFromFile = function() {
     this._bookIdObject = TAA.bm.Parameters.JsonConfig['ID Object'];
 
     this.loadJSON(function(response){
+        if(Object.keys($dataBooks._books).length > 0 && !TAA.bm.Parameters.Misc.ResetBookListOnLoad){
+            return;
+        }
         $dataBooks._books = $dataBooks.seekObject($dataBooks._bookRootContext, response);
         $dataBooks._categoryList = $dataBooks.loadCategoryList($dataBooks.seekObject(TAA.bm.Parameters.JsonConfig['Category List'], response));
         for(var i=0; i < $dataBooks._categoryList.length; i++){
@@ -1861,6 +1951,8 @@ LibraryData.prototype.loadBooksFromFile = function() {
             // creates category subObject
             if(!$dataBooks._bookKeyByCategory[cat]){
                 $dataBooks._bookKeyByCategory[cat] = [];
+                if(!$dataBooks._booksRead[cat])
+                    $dataBooks._booksRead[cat] = [];
             }
 
             // Fill in books under categories ordered by Ids, if they exist
@@ -1917,6 +2009,14 @@ LibraryData.prototype.loadCategoryList = function(array){
     }
 
     return returnArray;
+};
+
+LibraryData.prototype.resetBooksRead = function(){
+    this._booksRead = {};
+    for(var cat in this._bookKeyByCategory){
+        if(!this._booksRead[cat])
+            this._booksRead[cat] = [];
+    }
 };
 
 LibraryData.prototype.loadBooksFromParameters = function(){
@@ -2273,6 +2373,22 @@ Game_System.prototype.learnBooksByCategory = function(category){
     }
 };
 
+Game_System.prototype.resetLibrary = function(){
+    $dataBooks = new LibraryData();
+};
+
+Game_System.prototype.resetLibraryBookList = function(){
+    var tmp = new LibraryData();
+    $dataBooks._books = tmp._books;
+    $dataBooks._bookKeyByCategory = tmp._bookKeyByCategory;
+    $dataBooks._categoryList = tmp._categoryList;
+    $dataBooks._categoryByBookKey = tmp._categoryByBookKey;
+};
+
+Game_System.prototype.resetLibraryBooksRead = function(){
+    $dataBooks.resetBooksRead();
+};
+
 //=============================================================================
 // Window_MenuCommand
 //=============================================================================
@@ -2382,6 +2498,17 @@ Game_Interpreter.prototype.processBookPluginCommands = function(args){
         }
         else if(args[1].toLowerCase() === 'show'){
             $gameSystem.setTitleBarVisibility(true);
+        }
+    }
+    else if(args[0].toLowerCase() === 'reset'){
+        if(args[1].toLowerCase() === 'all'){
+            $gameSystem.resetLibrary();
+        }
+        if(args[1].toLowerCase() === 'booklist'){
+            $gameSystem.resetLibraryBookList();
+        }
+        if(args[1].toLowerCase() === 'booksread'){
+            $gameSystem.resetLibraryBooksRead();
         }
     }
 };

@@ -197,6 +197,11 @@
                 "title": "Version 1.3.4",
                 "text": "%in_img(\"alphabet-2010751_960_720\", 10, 10)dded new feature to allow trailing \ninline images into book texts\n%in_img(\"alphabet-2010746_960_720\", 10, 10)ixed bug with test padding not being \napplied to book text%in_img(\"alphabet-2010746_960_720\", 10, 10)ixed an issue when using RS_MessageAlign \nthat caused the first line to not be aligned\ncorrectly",
                 "category": 4
+            },
+            "Version1.3.5": {
+                "title": "Version 1.3.5",
+                "text": " - Included parameters that an be used to reset \nor keep book list on game load. If set to reset, \nNew books created into the selected datasource \nwill be loaded into the game, otherwise it will \nkeep the list of books previously loaded by that \nsave. Similarly, there's another new parameter \nthat allows you to reset or remember books read \non game load. Which means you can set the plugin \nto make it so all books listed on the book menu \nare forgotten, or remembered on game load.\n - Added script calls and plugin commands to \nreset the whole library, only the book list, and \nonly books read (forget all books found);",
+                "category": 4
             }
         }
     }
