@@ -25,8 +25,7 @@ var Imported = Imported || {};
  * noncommercial use. You're free to edit to suit your game's needs, as long as I'm
  * credited for the original version. You're not allowed to reuse and sell
  * part or the whole of this plugin without prior written consent from the author.
- * Also, let me know when you publish your
- * game so I can check it out!
+ * Also, let me know when you publish your game so I can check it out!
  * 
  * If you like and want to support me, check out my facebook page and become
  * my patron:
@@ -804,13 +803,13 @@ var Imported = Imported || {};
  *  - Reload the whole book list and books read. It might be useful when testing
  * your game.
  * 
- * Library Reset BookList
+ * LibraryData Reset BookList
  *  - Reload all book data from your datasource, but keeps the list of books read.
  * This should be used carefully, as changing category/books names, order, or ids,
  * can be game breaking. It maybe useful for testing, but I recommend caution if
  * it is to be used on your released game.
  * 
- * Library Reset BooksRead
+ * LibraryData Reset BooksRead
  *  - Reload the list of books read, making the player forget all books read. 
  *
  * ============================================================================
