@@ -202,6 +202,11 @@
                 "title": "Version 1.3.5",
                 "text": " - Included parameters that an be used to reset \nor keep book list on game load. If set to reset, \nNew books created into the selected datasource \nwill be loaded into the game, otherwise it will \nkeep the list of books previously loaded by that \nsave. Similarly, there's another new parameter \nthat allows you to reset or remember books read \non game load. Which means you can set the plugin \nto make it so all books listed on the book menu \nare forgotten, or remembered on game load.\n - Added script calls and plugin commands to \nreset the whole library, only the book list, and \nonly books read (forget all books found);",
                 "category": 4
+            },
+            "Version1.3.6": {
+                "title": "Version 1.3.6",
+                "text": "- Added the 'Load Closed Categories' parameter \nto allow categories to be automatically closed \nwhen loading the plugin menu. If set to NO, the \nplugin will retain previous behavior of always \nshowing every category open",
+                "category": 4
             }
         }
     }

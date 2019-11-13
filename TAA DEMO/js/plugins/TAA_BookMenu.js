@@ -5,14 +5,14 @@
 
 var TAA = TAA || {};
 TAA.bm = {};
-TAA.bm.Version = "1.3.5";
+TAA.bm.Version = "1.3.6";
 TAA.bm.PluginName = "TAA_BookMenu";
 TAA.bm.alias = {};
 var Imported = Imported || {};
 
 /*:
  *
- * @plugindesc [1.3.5] Create a Book Menu
+ * @plugindesc [1.3.6] Create a Book Menu
  * @author T. A. A. (taaspider)
  * @url https://www.patreon.com/taaspider
  * 
@@ -193,6 +193,14 @@ var Imported = Imported || {};
  * 
  * Default: 
  *  %1%2 (%3)
+ * 
+ * Load Closed Categories
+ *  - This parameter defines if the book list in the menu scene should be loaded
+ * with categories closed by default. If set to ON, they will be loaded as closed,
+ * if OFF, as open.
+ * 
+ * Default:
+ *  ON
  * 
  * Book Indent
  *  - This is how much to indent book names if the categories are shown, helping
@@ -869,6 +877,10 @@ var Imported = Imported || {};
  * or remembered on game load;
  * - Added script calls and plugin commands to reset the whole library, only
  * the book list, and only books read (forget all books found);
+ * Version 1.3.6:
+ * - Added the 'Load Closed Categories' parameter to allow categories to be 
+ * automatically closed when loading the plugin menu. If set to NO, the 
+ * plugin will retain previous behavior of always showing every category open
  *
  * ============================================================================
  * End of Help
@@ -988,7 +1000,7 @@ var Imported = Imported || {};
  * @parent ---Book Menu Scene---
  * @type struct<MenuListWindow>
  * @desc Configure properties for the Menu List Window on the Book Menu.
- * @default {"X":"0","Y":"0","Width":"Graphics.boxWidth * 1/3","Height":"Graphics.boxHeight","Font Size":"20","Font Face":"GameFont","Line Height":"36","Show Categories":"true","Category Alignment":"left","Closed Category Symbol":"+","Opened Category Symbol":"-","Category Text Format":"%1 %2 (%3)","Book Alignment":"left","Book Indent":"16","Hide Unread Books":"true","Standard Padding":"18","Text Padding":"6","Standard Opacity":"255","Back Opacity":"192","Window Skin":"Window"}
+ * @default {"X":"0","Y":"0","Width":"Graphics.boxWidth * 1/3","Height":"Graphics.boxHeight","Font Size":"20","Font Face":"GameFont","Line Height":"36","Show Categories":"true","Category Alignment":"left","Closed Category Symbol":"+","Opened Category Symbol":"-","Category Text Format":"%1 %2 (%3)","Load Closed Categories":"true","Book Alignment":"left","Book Indent":"16","Hide Unread Books":"true","Standard Padding":"18","Text Padding":"6","Standard Opacity":"255","Back Opacity":"192","Window Skin":"Window"}
  * 
  * @param Menu Title Window Config
  * @parent ---Book Menu Scene---
@@ -1363,6 +1375,13 @@ var Imported = Imported || {};
  * @default %1 %2 (%3)
  * @desc Format to display book categories. Text codes supported:
  * %1 - Open/Closed  %2 - Category Name  %3 - Number of books within
+ * 
+ * @param Load Closed Categories
+ * @type boolean
+ * @on YES
+ * @off NO
+ * @default true
+ * @desc Should categories be closed by default when loading the menu scene?
  * 
  * @param Book Alignment
  * @type combo
@@ -2530,6 +2549,9 @@ Window_BookList.prototype.initialize = function(ttlw, txtw) {
     this._closedCategorySymbol = TAA.bm.Parameters.MenuListWindow['Closed Category Symbol'];
     this._openCategorySymbol = TAA.bm.Parameters.MenuListWindow['Opened Category Symbol'];
     this._categoryTextFormat = TAA.bm.Parameters.MenuListWindow['Category Text Format'] || "%1 %2 (%3)";
+    this._closeCategoriesByDefault = JSON.parse(TAA.bm.Parameters.MenuListWindow['Load Closed Categories']);
+    if(this._closeCategoriesByDefault === true)
+        this._closedBookCategories = $dataBooks._categoryList.splice(0);
 
     var x = eval(TAA.bm.Parameters.MenuListWindow.X) || 0;
     var y = eval(TAA.bm.Parameters.MenuListWindow.Y) || 0;
