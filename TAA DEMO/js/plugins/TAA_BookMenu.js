@@ -2023,7 +2023,7 @@ LibraryData.prototype.loadCategoryList = function(array){
         }
     }
     else{
-        returnArray = TAA.bm.Parameters.LocalBooks['Category Order'].slice();
+        returnArray = JSON.parse(TAA.bm.Parameters.LocalBooks['Category Order']).slice();
     }
 
     return returnArray;
