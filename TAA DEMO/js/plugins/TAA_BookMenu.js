@@ -2550,8 +2550,6 @@ Window_BookList.prototype.initialize = function(ttlw, txtw) {
     this._openCategorySymbol = TAA.bm.Parameters.MenuListWindow['Opened Category Symbol'];
     this._categoryTextFormat = TAA.bm.Parameters.MenuListWindow['Category Text Format'] || "%1 %2 (%3)";
     this._closeCategoriesByDefault = JSON.parse(TAA.bm.Parameters.MenuListWindow['Load Closed Categories']);
-    if(this._closeCategoriesByDefault === true)
-        this._closedBookCategories = $dataBooks._categoryList.splice(0);
 
     var x = eval(TAA.bm.Parameters.MenuListWindow.X) || 0;
     var y = eval(TAA.bm.Parameters.MenuListWindow.Y) || 0;
@@ -2671,6 +2669,9 @@ Window_BookList.prototype.makeCommandList = function() {
 
 Window_BookList.prototype.addBookList = function(){
     var listCategory;
+    if(this._closeCategoriesByDefault === true){
+        this._closedBookCategories = $dataBooks._categoryList.slice();
+    }
     TAA.log(4, "Window_BookList: Starting addBookList loop");
     for(var cat in $dataBooks._bookKeyByCategory){
         var category = this.convertEscapeCharacters(cat);
