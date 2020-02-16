@@ -207,6 +207,11 @@
                 "title": "Version 1.3.6",
                 "text": "- Added the 'Load Closed Categories' parameter \nto allow categories to be automatically closed \nwhen loading the plugin menu. If set to NO, the \nplugin will retain previous behavior of always \nshowing every category open",
                 "category": 4
+            },
+            "Version1.3.7": {
+                "title": "Version 1.3.7",
+                "text": "- Added a handler to allow closing the detached window when pressing 'ok' as well as 'cancel';\n- Fixed the black text window issue on large books with lots of line breaks;",
+                "category": 4
             }
         }
     }
