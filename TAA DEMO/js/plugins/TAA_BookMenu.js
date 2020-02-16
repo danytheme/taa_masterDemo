@@ -5,14 +5,14 @@
 
 var TAA = TAA || {};
 TAA.bm = {};
-TAA.bm.Version = "1.3.6";
+TAA.bm.Version = "1.3.7";
 TAA.bm.PluginName = "TAA_BookMenu";
 TAA.bm.alias = {};
 var Imported = Imported || {};
 
 /*:
  *
- * @plugindesc [1.3.6] Create a Book Menu
+ * @plugindesc [1.3.7] Create a Book Menu
  * @author T. A. A. (taaspider)
  * @url https://www.patreon.com/taaspider
  * 
@@ -881,6 +881,10 @@ var Imported = Imported || {};
  * - Added the 'Load Closed Categories' parameter to allow categories to be 
  * automatically closed when loading the plugin menu. If set to NO, the 
  * plugin will retain previous behavior of always showing every category open
+ * Version 1.3.7:
+ * - Added a handler to allow closing the detached window when pressing 'ok' as 
+ * well as 'cancel';
+ * - Fixed the black text window issue on large books with lots of line breaks;
  *
  * ============================================================================
  * End of Help
@@ -3076,7 +3080,7 @@ Window_BookText.prototype.createContents = function() {
                 if(i < this._printableObjects.length && this._breakBeforeImage) 
                     obj.content += '\n';
                 obj.textState = this.setupTextState(obj.content);
-                this._allTextHeight += this.calcTextHeight(obj.textState, true) * 10;
+                this._allTextHeight += this.calcTextHeight(obj.textState, true);
                 currentY += this.calcTextHeight(obj.textState, true);
                 break;
             case "inline_image":
@@ -3510,6 +3514,7 @@ Scene_Book.prototype.createTextWindow = function(){
     var height = Math.round(eval(TAA.bm.Parameters.DetachedTextWindow.Height)) || Graphics.boxHeight;
     this._textWindow = new Window_BookText(x, y, width, height, true);
     this._textWindow.setHandler('cancel', this.onTextCancel.bind(this));
+    this._textWindow.setHandler('ok', this.onTextCancel.bind(this));
     this._textWindow.setBook($dataBooks._currentBook, false);
 };
 
