@@ -4199,40 +4199,6 @@ TouchInput._onMouseMove = function(event){
     this._mouseOverY = Graphics.pageToCanvasY(event.pageY);
 };
 
-// TouchInput._scrollLength = 0;
-
-// TAA.bm.alias.TouchInput.onTouchStart = TouchInput._onTouchStart;
-// TouchInput._onTouchStart = function(event){
-//     this._originX = Graphics.pageToCanvasX(event.changedTouches[0].pageX);
-//     this._originY = Graphics.pageToCanvasX(event.changedTouches[0].pageY);
-//     TAA.bm.alias.TouchInput.onTouchStart.call(this, event);
-// };
-
-// TAA.bm.alias.TouchInput.onMove = TouchInput._onMove;
-// TouchInput._onMove = function(x, y){
-//     TAA.bm.alias.TouchInput.onMove.call(this, x, y);
-//     console.log(this._originY + " || " + y);
-//     if(this.isPressed()){
-//         if(this._originY - y <= -50){
-//             // Input._currentState['pageup']=true;
-//             // setTimeout("Input._currentState['pageup']=false;", 100);
-//             this._scrollLength += (this._originY - y);
-//         }
-//         if(this._originY - y >= 50){
-//             // Input._currentState['pagedown']=true;
-//             // setTimeout("Input._currentState['pagedown']=false;", 100);
-//             this._scrollLength += (this._originY - y);
-//         }
-//         this._originY = y;
-//     }
-// };
-
-// TAA.bm.alias.TouchInput.onTouchEnd = TouchInput._onTouchEnd;
-// TouchInput._onTouchEnd = function(event){
-//     this._scrollLength = 0;
-//     TAA.bm.alias.TouchInput.onTouchEnd.call(this, event);
-// };
-
 // Trace can be a number between 0 and 4
 // The higher the number, the more verbose is the plugin
 TAA.bm.trace = 0;
