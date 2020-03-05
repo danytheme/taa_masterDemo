@@ -912,9 +912,9 @@ var Imported = Imported || {};
  * - Fixed the black text window issue on large books with lots of line breaks;
  * Version 1.4.0:
  * - Fixed arrows not showing in the text window when scrolling;
- * - Fixed clipping text on text window when using wordwrapping plugins;
- * - Fixed Auto Place, Enable and Show menu parameters (enable 'Text Windows 
+ * - Fixed clipping text on text window when using wordwrapping plugins (enable 'Text Windows 
  * WordWrap Fix' to activate it);
+ * - Fixed Auto Place, Enable and Show menu parameters;
  * - Added native plugin support to touch/click and drag scrolling, and scrolling
  * by clicking/touching the up/down arrows. Touch/click support can also be
  * disabled (total or partially) using the 'Native Touch/Click Support' parameter
