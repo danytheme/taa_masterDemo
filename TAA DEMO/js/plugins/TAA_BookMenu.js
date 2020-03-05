@@ -5,14 +5,14 @@
 
 var TAA = TAA || {};
 TAA.bm = {};
-TAA.bm.Version = "1.3.7";
+TAA.bm.Version = "1.4.0";
 TAA.bm.PluginName = "TAA_BookMenu";
 TAA.bm.alias = {};
 var Imported = Imported || {};
 
 /*:
  *
- * @plugindesc [1.3.7] Create a Book Menu
+ * @plugindesc [1.4.0] Create a Book Menu
  * @author T. A. A. (taaspider)
  * @url https://www.patreon.com/taaspider
  * 
@@ -478,6 +478,31 @@ var Imported = Imported || {};
  * be reloaded as they were when the game was saved. If set to "RESET", all books
  * will be forgotten on game load.
  * 
+ * Text Windows WordWrap Fix
+ *  - This parameter should ONLY be set to true when using a wordwrap plugin.
+ * If you're not, leave it as 'false', otherwise you may overburden your GPU
+ * memory for nothing.
+ * The reason why this is required, is that when using wordwrap, the size of
+ * your full text is not really known until it is written to screen. However,
+ * to provide scrolling we need to know it beforehand. To counter that, this
+ * parameter enables a function that "guesses" the text onscreen size to avoid
+ * the clipped text issue without stressing the GPU. That guess, though, is
+ * not possible for both wordwrap and non-wordwrap at the same time. Thus the
+ * need to turn it on or off accordingly.
+ * 
+ * Native Touch/Click Support
+ *  - This parameter has three possible values:
+ *    * Disable: completely disables Touch/Click support;
+ *    * Up/Down Arrows Only: Enables support only for scrolling by clicking / 
+ *      touching on the up/down arrows;
+ *    * Full Support: Enables support for scrolling using the up/down arrows
+ *      and by touch/click and dragging up and down.
+ * By default this option is set to 'Full Support', but if you're using another
+ * plugin to provide custom touch behavior you may stumble into compatibility
+ * issues. In that case, try disabling full support either total or partially.
+ * I cannot guarantee compatibility with plugins which customize touch inputs
+ * with Full Support on ('Up/Down Arrows Only' should be okay though).
+ * 
  * =============================================================================
  * Instructions - DataSources
  * =============================================================================
@@ -885,6 +910,14 @@ var Imported = Imported || {};
  * - Added a handler to allow closing the detached window when pressing 'ok' as 
  * well as 'cancel';
  * - Fixed the black text window issue on large books with lots of line breaks;
+ * Version 1.4.0:
+ * - Fixed arrows not showing in the text window when scrolling;
+ * - Fixed clipping text on text window when using wordwrapping plugins;
+ * - Fixed Auto Place, Enable and Show menu parameters (enable 'Text Windows 
+ * WordWrap Fix' to activate it);
+ * - Added native plugin support to touch/click and drag scrolling, and scrolling
+ * by clicking/touching the up/down arrows. Touch/click support can also be
+ * disabled (total or partially) using the 'Native Touch/Click Support' parameter
  *
  * ============================================================================
  * End of Help
@@ -1096,6 +1129,23 @@ var Imported = Imported || {};
  * @off REMEMBER
  * @desc When loading a game, remember books read or reset the list?
  * @default false
+ * 
+ * @param Text Windows WordWrap Fix
+ * @parent ---Misc---
+ * @type boolean
+ * @on ON
+ * @off OFF
+ * @desc When using a wordwrap plugin, please turn this option on.
+ * @default false
+ * 
+ * @param Native Touch/Click Support
+ * @parent ---Misc---
+ * @type combo
+ * @option Disable
+ * @option Up/Down Arrows Only
+ * @option Full Support
+ * @desc Defines if and how this plugin will handle touch/click scrolling.
+ * @default Full Support
  * 
  */
 
@@ -1866,9 +1916,9 @@ TAA.bm.Parameters.JsonConfig = JSON.parse(Parameters['JSON Config']);
 TAA.bm.Parameters.LocalBooks = JSON.parse(Parameters['Plugin Manager Books']);
 
 TAA.bm.Parameters.Menu = {};
-TAA.bm.Parameters.Menu.MenuEntry = eval(Parameters['Auto Place Command']) || true;
-TAA.bm.Parameters.Menu.ShowMenu = eval(Parameters['Show Menu']) || true;
-TAA.bm.Parameters.Menu.EnableMenu = eval(Parameters['Enable Menu']) || true;
+TAA.bm.Parameters.Menu.MenuEntry = JSON.parse(Parameters['Auto Place Command']);
+TAA.bm.Parameters.Menu.ShowMenu = JSON.parse(Parameters['Show Menu']);
+TAA.bm.Parameters.Menu.EnableMenu = JSON.parse(Parameters['Enable Menu']);
 TAA.bm.Parameters.Menu.Name = Parameters['Menu Name'];
 
 TAA.bm.Parameters.DetachedBgImages = JSON.parse(Parameters['Detached Background Config']);
@@ -1882,6 +1932,8 @@ TAA.bm.Parameters.Misc['Break Before Image'] = JSON.parse(Parameters['Break Befo
 TAA.bm.Parameters.Misc['Force Image Into Window'] = JSON.parse(Parameters['Force Image Into Window']);
 TAA.bm.Parameters.Misc.ResetBookListOnLoad = JSON.parse(Parameters['Reset Book List On Load']);
 TAA.bm.Parameters.Misc.ResetBooksReadOnLoad = JSON.parse(Parameters['Reset Books Read On Load']);
+TAA.bm.Parameters.Misc['Text Windows WordWrap Fix'] = JSON.parse(Parameters['Text Windows WordWrap Fix']);
+TAA.bm.Parameters.Misc['Native Touch/Click Support'] = Parameters['Native Touch/Click Support'];
 
 //=============================================================================
 // DataManager
@@ -2979,6 +3031,9 @@ Window_BookText.prototype.initialize = function(x, y, width, height) {
     if(this._breakBeforeImage === undefined) this._breakBeforeImage = false;
     this._forceImgIntoWindow = TAA.bm.Parameters.Misc['Force Image Into Window'];
     if(this._forceImgIntoWindow === undefined) this._forceImgIntoWindow = true;
+    this._windowWidth = width;
+    this._windowHeight = height;
+    this._touchOriginY = undefined;
     Window_Selectable.prototype.initialize.call(this, x, y, width, height);
     this.setStandardOpacity();
     this.refresh();
@@ -3080,7 +3135,13 @@ Window_BookText.prototype.createContents = function() {
                 if(i < this._printableObjects.length && this._breakBeforeImage) 
                     obj.content += '\n';
                 obj.textState = this.setupTextState(obj.content);
-                this._allTextHeight += this.calcTextHeight(obj.textState, true);
+                if(TAA.bm.Parameters.Misc['Text Windows WordWrap Fix'] === true){
+                    var heightFix = (Math.ceil((obj.textState.text.length * this.standardFontSize()) / this.windowWidth()) + (obj.textState.text.match(/\n/g) || []).length) * this.lineHeight();
+                    this._allTextHeight += Math.max(this.calcTextHeight(obj.textState, true), heightFix);
+                }
+                else{
+                    this._allTextHeight += this.calcTextHeight(obj.textState, true);
+                }
                 currentY += this.calcTextHeight(obj.textState, true);
                 break;
             case "inline_image":
@@ -3416,6 +3477,28 @@ Window_BookText.prototype.updateKeyScrolling = function() {
         this.scrollOriginUp(this.scrollSpeed() * 4);
     } else if (Input.isPressed('pagedown')) {
         this.scrollOriginDown(this.scrollSpeed() * 4);
+    } 
+    else if(TouchInput.isPressed() && TAA.bm.Parameters.Misc['Native Touch/Click Support'] !== 'Disable'){
+        var y = TouchInput.y;
+        var x = TouchInput.x;
+        if(this.upArrowVisible && x > this.x && x < (this.x + this.windowWidth()) && y > this.y && y < (this.y + this.standardPadding())){
+            this.scrollOriginUp(this.scrollSpeed() * 2);
+        }
+        else if(this.downArrowVisible && x > this.x && x < (this.x + this.windowWidth()) && y > (this.y + this.windowHeight() - this.standardPadding()) && y < (this.y + this.windowHeight())){
+            this.scrollOriginDown(this.scrollSpeed() * 2);
+        }
+        else if(TAA.bm.Parameters.Misc['Native Touch/Click Support'] === 'Full Support' && x > this.x && x < (this.x + this.windowWidth()) && y > this.y && y < (this.y + this.windowHeight())){
+            if(this._touchOriginY !== undefined){
+                if((y - this._touchOriginY) > 10){
+                    this.scrollOriginUp(y - this._touchOriginY);
+                    this._touchOriginY = y;
+                }
+                else if((y - this._touchOriginY) < -10){
+                    this.scrollOriginDown((y - this._touchOriginY)*-1);
+                    this._touchOriginY = y;
+                }
+            }
+        }
     }
     TAA.log(4, "Window_BookText: Update key scrolling end");
 };
@@ -3426,9 +3509,6 @@ Window_BookText.prototype.updateArrows = function() {
     TAA.log(3, "updateArrows custom code start");
     if (this._lastOriginY === this.origin.y) return;
     this.showArrows();
-    TAA.log(3, "updateArrows custom code end");
-    TAA.log(3, "updateArrows calling alias");
-    TAA.bm.alias.WindowSelectable.updateArrows.call(this);
     TAA.log(3, "updateArrows end");
 };
 
@@ -3459,6 +3539,21 @@ Window_BookText.prototype.processWheel = function() {
   if (TouchInput.wheelY <= -threshold) {
     this.scrollOriginUp(this.scrollSpeed() * 4);
   }
+};
+
+if(TAA.bm.Parameters.Misc['Native Touch/Click Support'] === 'Full Support'){
+    TAA.bm.alias.WindowSelectable.processTouch = Window_Selectable.prototype.processTouch;
+    Window_BookText.prototype.processTouch = function(){
+        this._lastTouchingStatus = this._touching;
+        TAA.bm.alias.WindowSelectable.processTouch.call(this);
+        if(this._lastTouchingStatus !== this._touching){
+            if(this._lastTouchingStatus === false){
+                this._touchOriginY = TouchInput.y;
+            }
+            else
+                this._touchOriginY = undefined;
+        }
+    };
 };
 
 Window_BookText.prototype.whoAmI = function(){
